@@ -7,6 +7,7 @@ import {
   Image,
   Linking,
 } from "react-native";
+import env from "./env";
 
 const Drive = () => {
   const handleLinkPress = (url) => {
@@ -37,13 +38,7 @@ const Drive = () => {
       >
         Please help us speeding the development by Donating us!!
       </Text>
-      <TouchableOpacity
-        onPress={() =>
-          handleLinkPress(
-            "upi://pay?pa=prathamu200-1@oksbi&pn=Pratham%20Upadhyay&cu=INR"
-          )
-        }
-      >
+      <TouchableOpacity onPress={() => handleLinkPress(env.API_URL)}>
         <View style={{ flexDirection: "column", alignItems: "center" }}>
           <Image
             source={require("./assets/public-sponsor.png")}

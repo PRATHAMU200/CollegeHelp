@@ -10,13 +10,12 @@ import {
   ScrollView,
   Alert,
 } from "react-native";
+import env from "./env";
 
 const HomeScreen = () => {
   //const url = "https://mercykknight.github.io";
   const handleLinkPress = (url) => {
-    if (
-      url === "upi://pay?pa=prathamu200-1@oksbi&pn=Pratham%20Upadhyay&cu=INR"
-    ) {
+    if (url === env.API_URL) {
       Alert.alert(
         "Thankyou for Donating to us 😊!!",
         "You are the reason this app is alive.🙋‍♂️"
@@ -157,13 +156,7 @@ const HomeScreen = () => {
             </Text>
           </View>
         </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() =>
-            handleLinkPress(
-              "upi://pay?pa=prathamu200-1@oksbi&pn=Pratham%20Upadhyay&cu=INR"
-            )
-          }
-        >
+        <TouchableOpacity onPress={() => handleLinkPress(env.API_URL)}>
           <View style={{ flexDirection: "column", alignItems: "center" }}>
             <Image
               source={require("./assets/public-sponsor.png")}
