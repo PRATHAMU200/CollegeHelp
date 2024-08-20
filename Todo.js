@@ -8,16 +8,82 @@ import {
   View,
   ScrollView,
   Keyboard,
+  NativeModules,
 } from "react-native";
 import Task from "./Task.js";
 import { Icon } from "react-native-elements";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { useState, useEffect } from "react";
+import env from "./env.js";
 
 export default function Todo({ onTodoLengthChange }) {
   // Creating useState for Input task
   const [task, settask] = useState();
   const [todo, setTodo] = useState([]);
+
+  //Load Todos
+  useEffect(() => {
+    //check first change:
+    const checkFirstLoad = async () => {
+      try {
+        const isFirstLoad = await AsyncStorage.getItem("isFirstLoad");
+        if (isFirstLoad === null) {
+          // This is the first load
+          await AsyncStorage.setItem("isFirstLoad", "false");
+          sendDiscordWebhook(); // Send the webhook message
+        }
+      } catch (error) {
+        console.error("Error checking first load:", error);
+      }
+    };
+    // Getting saved todo item from the load
+    const loadTodos = async () => {
+      try {
+        const savedTodos = await AsyncStorage.getItem("todos");
+        if (savedTodos) {
+          setTodo(JSON.parse(savedTodos));
+        }
+      } catch (error) {
+        console.error("Error loading todos from AsyncStorage:", error);
+      }
+    };
+    checkFirstLoad();
+    loadTodos();
+  }, []);
+
+  //Save todos in local Async Storage
+  useEffect(() => {
+    const saveTodos = async () => {
+      try {
+        await AsyncStorage.setItem("todos", JSON.stringify(todo));
+      } catch (error) {
+        console.error("Error saving todos to AsyncStorage:", error);
+      }
+    };
+    saveTodos();
+    onTodoLengthChange(todo.length);
+  }, [todo]);
+
+  //Discord Webhooks for checking connection:
+  const sendDiscordWebhook = async () => {
+    const webhookUrl = env.DISCORD_WEBHOOK_API;
+    const message = {
+      content: `The app has been loaded for the first time on \n Platform: ${Platform.OS}\n Brand: ${Platform.constants.Brand}\n Model: ${Platform.constants.Model}\n model: ${Platform.constants.model}`,
+    };
+
+    try {
+      await fetch(webhookUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(message),
+      });
+    } catch (error) {
+      console.error("Error sending webhook:", error);
+    }
+  };
 
   //Changing number in Navigation bar
   useEffect(() => {
