@@ -5,6 +5,7 @@ import Todo from "./Todo";
 import { Icon } from "react-native-elements";
 import { useState } from "react";
 import Drive from "./drive";
+import Notes from "./notes";
 const Tab = createBottomTabNavigator();
 
 const Navigation = () => {

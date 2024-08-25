@@ -9,10 +9,18 @@ import {
   Image,
   ScrollView,
   Alert,
+  DrawerLayoutAndroid,
+  TouchableHighlight,
 } from "react-native";
+import { useState } from "react";
 import env from "./env";
+import TimeTable from "./timetable";
+import HomeNotification from "./home_notification";
+import { Icon } from "react-native-elements";
 
 const HomeScreen = () => {
+  const [isTimeTableOpen, setIsTimeTableOpen] = useState(false);
+
   //const url = "https://mercykknight.github.io";
   const handleLinkPress = (url) => {
     if (url === env.API_URL) {
@@ -40,14 +48,40 @@ const HomeScreen = () => {
         <Text>Simplify your college experience with us.</Text>
       </View>
 
-      <View
+      {/*Notification Bar for CLass notification: */}
+      <Text
         style={{
-          height: 0,
-          backgroundColor: "#ccc",
-          width: "100%",
-          marginTop: 30,
+          alignItems: "right",
+          marginLeft: 15,
+          fontSize: 20,
+          fontWeight: 500,
         }}
-      />
+      >
+        Notifications / Events :-
+      </Text>
+      <View style={{ height: 3, backgroundColor: "#ccc", width: "100%" }} />
+      <HomeNotification style={styles.Notification} />
+
+      {/* TimeTable Drawer */}
+      <TouchableOpacity onPress={() => setIsTimeTableOpen(!isTimeTableOpen)}>
+        <Text
+          style={{
+            marginLeft: 15,
+            fontSize: 20,
+            fontWeight: 500,
+          }}
+        >
+          <Icon
+            name={isTimeTableOpen ? "arrow-drop-up" : "arrow-drop-down"}
+            size={40}
+          />{" "}
+          TimeTable :-
+        </Text>
+      </TouchableOpacity>
+      <View style={{ height: 3, backgroundColor: "#ccc", width: "100%" }} />
+
+      {isTimeTableOpen && <TimeTable />}
+
       {/* Websits to visit */}
 
       <Text
@@ -56,6 +90,7 @@ const HomeScreen = () => {
           marginLeft: 15,
           fontSize: 20,
           fontWeight: 500,
+          marginTop: 35,
         }}
       >
         Dtu College Websites:-
@@ -193,6 +228,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#E8EAED",
     flexDirection: "column",
     //alignItems: "center",
+  },
+  Notification: {
+    flex: 1,
   },
 });
 
