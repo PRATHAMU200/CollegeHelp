@@ -11,6 +11,7 @@ import {
   Alert,
   DrawerLayoutAndroid,
   TouchableHighlight,
+  Animated,
 } from "react-native";
 import { useState } from "react";
 import env from "./env";
@@ -33,7 +34,7 @@ const HomeScreen = () => {
   };
   return (
     <ScrollView style={styles.homebody}>
-      <View
+      {/* <View
         style={{
           flexShrink: 1,
           flexDirection: "column",
@@ -46,6 +47,17 @@ const HomeScreen = () => {
         </Text>
         <Text>One stop for all your college needs.</Text>
         <Text>Simplify your college experience with us.</Text>
+      </View> */}
+      <View style={{ padding: 20, marginBottom: 10 }}>
+        <Text style={{ fontSize: 24, fontWeight: 600, color: "#000" }}>
+          Welcome To College Help!
+        </Text>
+        <Text style={{ fontSize: 18, color: "#000", fontStyle: "italic" }}>
+          {"> "}One stop for all your college needs.
+        </Text>
+        <Text style={{ fontSize: 18, color: "#000", fontStyle: "italic" }}>
+          {"> "}Simplify your college experience with us.
+        </Text>
       </View>
 
       {/*Notification Bar for CLass notification: */}

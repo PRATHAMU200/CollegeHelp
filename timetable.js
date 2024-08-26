@@ -206,12 +206,27 @@ const TimeTable = () => {
                 key={day}
                 style={[
                   styles.cell,
-                  tableData[day][hour].classType !== "" ? styles.filled : null,
+                  tableData[day][hour].classType !== ""
+                    ? tableData[day][hour].classType === "Practical"
+                      ? styles.filled_Practical
+                      : tableData[day][hour].classType === "Lecture"
+                      ? styles.filled_Lecture
+                      : styles.filled
+                    : null,
                 ]}
                 onPress={() => handleTouch(day, hour)}
-              />
-              //{/* <Text> {tableData[day][hour].classType === "" ? "" : "F"}</Text> */}
-              //   </TouchableOpacity>
+              >
+                {tableData[day][hour].classType !== "" && (
+                  <Text style={styles.classTypeText}>
+                    {tableData[day][hour].classType === "Practical"
+                      ? "P"
+                      : tableData[day][hour].classType === "Lecture"
+                      ? "L"
+                      : "T"}
+                  </Text>
+                )}
+                {/* <Text> {tableData[day][hour].classType === "" ? "" : "F"}</Text> */}
+              </TouchableOpacity>
             ))}
           </View>
         ))}
@@ -270,8 +285,9 @@ const TimeTable = () => {
                 onValueChange={(itemValue) => setClassType(itemValue)}
               >
                 <Picker.Item label="Select Type" value="" />
-                <Picker.Item label="Lab" value="Lab" />
+                <Picker.Item label="Practical" value="Practical" />
                 <Picker.Item label="Lecture" value="Lecture" />
+                <Picker.Item label="Tutorial" value="Tutorial" />
               </Picker>
             </View>
             <TextInput
@@ -347,7 +363,11 @@ const TimeTable = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    padding: 10,
+    margin: 10,
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    elevation: 10,
   },
   header: {
     flexDirection: "row",
@@ -374,6 +394,19 @@ const styles = StyleSheet.create({
   },
   filled: {
     backgroundColor: "#007aff",
+  },
+  filled_Practical: {
+    backgroundColor: "#2fd614",
+  },
+  filled_Lecture: {
+    backgroundColor: "#decf1a",
+  },
+  classTypeText: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#3a414e", //"#fff",
+    textAlign: "center",
+    justifyContent: "center",
   },
 });
 

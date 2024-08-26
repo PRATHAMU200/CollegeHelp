@@ -6,7 +6,19 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 const NotificationBar = ({ timetable, hour }) => {
   return (
     <View style={[styles.Notification_bar, { flexDirection: "row" }]}>
-      <View style={styles.square}>
+      <View
+        style={[
+          styles.square,
+          {
+            backgroundColor:
+              timetable.classType === "Lecture"
+                ? "#faea29"
+                : timetable.classType === "Practical"
+                ? "#2fd614"
+                : "#55BCF6",
+          },
+        ]}
+      >
         <Text>{timetable.classType}</Text>
       </View>
       <Text>
@@ -101,25 +113,25 @@ const HomeNotification = ({ onScroll }) => {
     }
   }, [tableData]);
 
-  const timetable = [
-    {
-      classType: "Class",
-      starttime: `${time.getHours()}:${time.getMinutes()}`,
-      endtime: `${time.getHours()}:${time.getMinutes()}`,
-      day: "Monday",
-      subjectCode: "MA125",
-      subjectTitle: "joke",
-      location: "Ab3-11",
-    },
-    {
-      classType: "Lab",
-      starttime: `${time.getHours()}:${time.getMinutes()}`,
-      endtime: `${time.getHours()}:${time.getMinutes()}`,
-      day: "Monday",
-      course: "EE125",
-      location: "TW1-11",
-    },
-  ];
+  // const timetable = [
+  //   {
+  //     classType: "Class",
+  //     starttime: `${time.getHours()}:${time.getMinutes()}`,
+  //     endtime: `${time.getHours()}:${time.getMinutes()}`,
+  //     day: "Monday",
+  //     subjectCode: "MA125",
+  //     subjectTitle: "joke",
+  //     location: "Ab3-11",
+  //   },
+  //   {
+  //     classType: "Lab",
+  //     starttime: `${time.getHours()}:${time.getMinutes()}`,
+  //     endtime: `${time.getHours()}:${time.getMinutes()}`,
+  //     day: "Monday",
+  //     course: "EE125",
+  //     location: "TW1-11",
+  //   },
+  // ];
   return (
     <ScrollView
       style={styles.Notification_Home_View}
@@ -128,7 +140,7 @@ const HomeNotification = ({ onScroll }) => {
       <Text style={styles.head}>Current: -</Text>
       {currentTimetable && currentTimetable.length > 0 ? (
         currentTimetable
-          .filter((timetable) => timetable.classType !== null)
+          .filter((timetable) => timetable.classType !== "")
           .map((timetable, index) => (
             <NotificationBar key={index} timetable={timetable} />
           ))
@@ -140,7 +152,7 @@ const HomeNotification = ({ onScroll }) => {
       <Text style={styles.head}>Upcoming: -</Text>
       {upcomingTimetable && upcomingTimetable.length > 0 ? (
         upcomingTimetable
-          .filter((timetable) => timetable.classType !== null)
+          .filter((timetable) => timetable.classType !== "")
           .map((timetable, index) => (
             <NotificationBar key={index} timetable={timetable} />
           ))
@@ -201,10 +213,10 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
   },
   square: {
-    width: 50,
+    width: 60,
     height: "auto",
     borderRadius: 5,
-    backgroundColor: "#ffe680", //"#55BCF6",
+    //backgroundColor: {timeData.classType === "Lecture" ? "#ffe680" : "#55BCF6"}, //"#55BCF6",
     opacity: 1,
     justifyContent: "center",
     alignItems: "center",
