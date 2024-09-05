@@ -5,6 +5,7 @@ import Todo from "./Todo";
 import { Icon } from "react-native-elements";
 import { useState } from "react";
 import Drive from "./drive";
+import DriveScreen from "./drivescreen";
 import Notes from "./notes";
 const Tab = createBottomTabNavigator();
 
@@ -47,7 +48,8 @@ const Navigation = () => {
         {() => <Todo onTodoLengthChange={handleTodoLengthChange} />}
       </Tab.Screen>
 
-      <Tab.Screen name="Your Drive" component={Drive} />
+      <Tab.Screen name="Your Drive" component={DriveScreen} />
+      {/* <Tab.Screen name="DTU MAP" component={DTUMap} /> */}
     </Tab.Navigator>
   );
 };

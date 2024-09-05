@@ -15,11 +15,15 @@
       "supportsTablet": true
     },
     "android": {
+      "permissions": [
+    "READ_EXTERNAL_STORAGE",
+    "WRITE_EXTERNAL_STORAGE"
+    ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/collegehelp_icon.jpg",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.anonymous.collegeHelp"
+      "package": "com.prathamtechlab.collegeHelp"
     },
     "web": {
       "favicon": "./assets/favicon.png"

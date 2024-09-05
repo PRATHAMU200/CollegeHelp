@@ -12,6 +12,9 @@ import {
   DrawerLayoutAndroid,
   TouchableHighlight,
   Animated,
+  AppRegistry,
+  PlatformConstants,
+  LogBox,
 } from "react-native";
 import { useState } from "react";
 import env from "./env";

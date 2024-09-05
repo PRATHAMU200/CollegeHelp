@@ -2,9 +2,10 @@
 
 # .env
 env.js
+comments.txt
 
 #android
-android/
+#android/
 
 # dependencies
 node_modules/
