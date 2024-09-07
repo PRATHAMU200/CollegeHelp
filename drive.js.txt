@@ -7,24 +7,41 @@ import {
   StyleSheet,
   Dimensions,
   Modal,
+  TouchableHighlight,
+  Touchable,
+  PermissionsAndroid,
   TextInput,
   Alert,
+  ScrollView,
+  Linking,
   Image,
+  AppRegistry,
+  PlatformConstants,
+  LogBox,
+  Platform,
   ActivityIndicator,
 } from "react-native";
+import { WebView } from "react-native-webview";
 import * as Sharing from "expo-sharing"; // Import the library
+//import Share from "react-native-share";
 import FileViewer from "react-native-file-viewer";
 import { Icon } from "react-native-elements";
+//import { DocumentDirectoryPath, writeFile } from "react-native-fs";
 import * as FileSystem from "expo-file-system";
+import * as DocumentPicker from "expo-document-picker";
 import ImageViewer from "react-native-image-zoom-viewer";
 import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from "expo-image-manipulator";
+import { decode as atob, encode as btoa } from "base-64";
 
 const { height, width } = Dimensions.get("window");
 
 const DriveScreen = () => {
   const [files, setFiles] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
+  const [folderCreated, setFolderCreated] = useState(false);
+  const [folderName, setFolderName] = useState("");
+  const [inputVisible, setInputVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedFileContent, setSelectedFileContent] = useState(null);
   const [selectedFileName, setSelectedFileName] = useState("");
@@ -35,12 +52,21 @@ const DriveScreen = () => {
   const rootPath = `${FileSystem.documentDirectory}CollegeHelpDrive`; // Update this line
   const [currentPath, setCurrentPath] = useState(rootPath); // Add this line
 
+  // Root directory for the app
+  //const appFolder = `${DocumentDirectoryPath}/CollegeHelpDrive`;
+
   useEffect(() => {
     loadFilesAndFolders();
   }, [currentPath]);
 
   useEffect(() => {
     const setupFileSystem = async () => {
+      // const { status } = await Permissions.askAsync(Permissions.MEDIA_LIBRARY);
+      // if (status !== "granted") {
+      //   alert("Sorry, we need storage permissions to make this work!");
+      //   return;
+      // }
+
       const folderInfo = await FileSystem.getInfoAsync(rootPath);
       if (!folderInfo.exists) {
         try {
@@ -102,7 +128,9 @@ const DriveScreen = () => {
 
   const handleFileClick = async (file) => {
     if (file.isDirectory) {
+      //setCurrentPath(file.uri); // Update this line
       setCurrentPath(`${currentPath}/${file.name}`);
+      //loadFilesAndFolders(); // Reload files in the new directory
       console.log(
         "Navigating to directory:",
         file.uri,
@@ -116,16 +144,93 @@ const DriveScreen = () => {
         // Remove extra "file://" prefix if present
         const cleanedUri = fileUri.replace(/^file:\/\/\//, "file:///");
 
+        console.log("Cleaned URI:", cleanedUri); // Debug: Check the URI
+
         if (["jpg", "jpeg", "png"].includes(fileType)) {
           // For image files, display them in the app
           setSelectedFileContent(cleanedUri);
           setSelectedFileName(file.name);
+        } else if (fileType === ".txt") {
+          // If it's a text file, read the content and display it
+          const fileContent = await FileSystem.readAsStringAsync(file.uri);
+          setSelectedFileContent(cleanedUri);
+          setSelectedFileName(file.name);
+        } else if (fileType === "txt") {
+          // Read and display text file content in WebView
+          const fileContent = await FileSystem.readAsStringAsync(file.uri);
+          const textHtml = `<pre style="white-space: pre-wrap;">${fileContent}</pre>`;
+          setSelectedFileContent(textHtml); // Set text content in WebView
+          setSelectedFileName(file.name);
+        } else if (fileType === "pdf") {
+          // Load PDF file inside WebView
+          // Convert PDF to Base64
+          // const fileContent = await FileSystem.readAsStringAsync(file.uri, {
+          //   encoding: FileSystem.EncodingType.Base64,
+          // });
+          // const base64Pdf = `data:application/pdf;base64,${fileContent}`;
+          // console.log(base64Pdf);
+          const cleanedU = fileUri.replace(/^file:\/\/\//, "content://");
+          const source = {
+            uri: cleanedU,
+            cache: true,
+          };
+          setSelectedFileContent(source.uri); // Set the Base64 PDF content
+          setSelectedFileName(file.name);
         } else {
-          alert("Could not open the file!!");
+          // Try to open the file in the default app for its type
+          const canOpen = await Linking.canOpenURL(cleanedUri);
+          if (canOpen) {
+            Linking.openURL(cleanedUri);
+          } else {
+            Alert.alert("Error", "Cannot open this file.");
+          }
         }
       } catch (error) {
         console.log("Error opening file:", error);
       }
+    }
+  };
+
+  const handleUploadFile = async () => {
+    setLoading(true);
+    try {
+      // Open the document picker
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ["*/*"], // You can specify the types of files you want to allow
+        copyToCacheDirectory: false, // To avoid copying to cache if unnecessary
+      });
+
+      console.log("DocumentPicker result:", result);
+
+      if (result.canceled === false) {
+        const contentUri = result.assets[0].uri;
+        const fileName = result.assets[0].name;
+        const destinationUri = `${currentPath}/${fileName}`;
+
+        console.log(`Picked file URI: ${contentUri}`);
+        console.log(`Destination URI: ${destinationUri}`);
+
+        // For content URIs, copy the file directly
+        try {
+          // Copy the file to the desired destination
+          await FileSystem.copyAsync({
+            from: contentUri,
+            to: destinationUri,
+          });
+
+          console.log(`File uploaded successfully: ${fileName}`);
+          loadFilesAndFolders(); // Refresh the file list
+          setModalVisible(false);
+        } catch (error) {
+          console.error("Error copying file:", error);
+        }
+      } else {
+        console.log("No file selected or document picker was canceled.");
+      }
+    } catch (error) {
+      console.error("Error uploading file:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -149,7 +254,7 @@ const DriveScreen = () => {
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
-        // aspect: [4, 3],
+        aspect: [4, 3],
         quality: 1,
       });
 
@@ -282,23 +387,15 @@ const DriveScreen = () => {
               onPress={() => handleFileClick(item)}
               onLongPress={() => handleLongPress(item)}
             >
-              <View style={styles.fileContent}>
-                {item.isDirectory ? (
-                  <View style={styles.folderPreview}>
-                    <Icon name="folder" size={40} color="#FFD700" />
-                    <Text style={styles.fileName}>{item.name}</Text>
-                  </View>
-                ) : (
-                  <Image
-                    source={{ uri: item.uri }}
-                    style={styles.imagePreview}
-                  />
-                )}
-              </View>
+              <Icon
+                name={item.isDirectory ? "folder" : "insert-drive-file"}
+                size={40} // Increase icon size
+                color={item.isDirectory ? "#FFD700" : "#666"} // Differentiate folders and files by color
+              />
+              <Text style={styles.fileName}>{item.name}</Text>
             </TouchableOpacity>
           )}
           keyExtractor={(item) => item.uri}
-          numColumns={3}
         />
       )}
       <TouchableOpacity style={styles.addButton} onPress={handleAddFile}>
@@ -322,6 +419,12 @@ const DriveScreen = () => {
               <View style={styles.modalItem}>
                 <Icon name="folder" type="material" size={24} color="#666" />
                 <Text style={styles.modalText}>Create folder</Text>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleUploadFile}>
+              <View style={styles.modalItem}>
+                <Icon name="upload" size={24} color="#666" />
+                <Text style={styles.modalText}>Upload file</Text>
               </View>
             </TouchableOpacity>
             <TouchableOpacity onPress={handleCameraImage}>
@@ -357,6 +460,18 @@ const DriveScreen = () => {
               enableSwipeDown={true}
               onSwipeDown={() => setSelectedFileContent(null)}
               style={styles.imageViewer}
+            />
+          ) : selectedFileContent && selectedFileName.endsWith(".txt") ? (
+            <WebView
+              originWhitelist={["*"]}
+              source={{ html: selectedFileContent }}
+              style={{ flex: 1 }}
+            />
+          ) : selectedFileContent && selectedFileName.endsWith(".pdf") ? (
+            <WebView
+              originWhitelist={["*"]}
+              source={{ uri: selectedFileContent }} // This will be the base64 content
+              style={{ flex: 1 }}
             />
           ) : (
             <Text style={styles.unsupportedText}>Unsupported file format.</Text>
@@ -502,7 +617,19 @@ const styles = StyleSheet.create({
     height: 300,
     resizeMode: "contain",
   },
-
+  fileItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 15,
+    marginVertical: 8,
+    backgroundColor: "#FFFFFF", // White background for each item
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
+  },
   fileName: {
     fontSize: 18, // Increase text size
     marginLeft: 15,
@@ -593,43 +720,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     textAlign: "center",
-  },
-  fileContent: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  fileName: {
-    fontSize: 18,
-    color: "#333",
-  },
-  fileItem: {
-    flex: 1,
-    padding: 5,
-    margin: 5,
-    borderRadius: 10,
-  },
-  fileContent: {
-    flex: 1,
-    justifyContent: "center",
-    // alignItems: "center",
-  },
-  imagePreview: {
-    width: width / 3 - 20, // Adjust width to fit 3 items per row with margin
-    height: width / 3 - 20, // Adjust height to fit 3 items per row with margin
-    borderRadius: 10,
-    resizeMode: "cover",
-    elevation: 10,
-  },
-  folderPreview: {
-    width: width / 3 - 20,
-    height: width / 3 - 20,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f0f0f0", // Optional background color for folders
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#ddd",
-    elevation: 20,
   },
 });
 

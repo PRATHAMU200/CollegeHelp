@@ -9,12 +9,6 @@ import {
   Image,
   ScrollView,
   Alert,
-  DrawerLayoutAndroid,
-  TouchableHighlight,
-  Animated,
-  AppRegistry,
-  PlatformConstants,
-  LogBox,
 } from "react-native";
 import { useState } from "react";
 import env from "./env";
@@ -52,14 +46,30 @@ const HomeScreen = () => {
         <Text>Simplify your college experience with us.</Text>
       </View> */}
       <View style={{ padding: 20, marginBottom: 10 }}>
-        <Text style={{ fontSize: 24, fontWeight: 600, color: "#000" }}>
+        <Text
+          style={{
+            fontSize: 24,
+            fontWeight: 600,
+            color: "#000",
+            alignSelf: "center",
+            marginBottom: 8,
+          }}
+        >
           Welcome To College Help!
         </Text>
-        <Text style={{ fontSize: 18, color: "#000", fontStyle: "italic" }}>
+        {/* <Text style={{ fontSize: 18, color: "#000", fontStyle: "italic" }}>
           {"> "}One stop for all your college needs.
-        </Text>
-        <Text style={{ fontSize: 18, color: "#000", fontStyle: "italic" }}>
-          {"> "}Simplify your college experience with us.
+        </Text> */}
+        <Text
+          style={{
+            fontSize: 18,
+            color: "#000",
+            fontStyle: "italic",
+            alignSelf: "center",
+          }}
+        >
+          {" "}
+          Simplify your college experience with us.
         </Text>
       </View>
 
@@ -67,7 +77,7 @@ const HomeScreen = () => {
       <Text
         style={{
           alignItems: "right",
-          marginLeft: 15,
+          marginLeft: 20,
           fontSize: 20,
           fontWeight: 500,
         }}
@@ -78,19 +88,29 @@ const HomeScreen = () => {
       <HomeNotification style={styles.Notification} />
 
       {/* TimeTable Drawer */}
-      <TouchableOpacity onPress={() => setIsTimeTableOpen(!isTimeTableOpen)}>
+      <TouchableOpacity
+        onPress={() => setIsTimeTableOpen(!isTimeTableOpen)}
+        style={{
+          marginLeft: 20,
+          fontSize: 40,
+          fontWeight: 500,
+          flexDirection: "row",
+          alignItems: "center",
+        }}
+      >
+        <Icon
+          name={isTimeTableOpen ? "arrow-drop-up" : "arrow-drop-down"}
+          type="material"
+          size={40}
+        />
         <Text
           style={{
-            marginLeft: 15,
+            marginLeft: 10,
             fontSize: 20,
             fontWeight: 500,
           }}
         >
-          <Icon
-            name={isTimeTableOpen ? "arrow-drop-up" : "arrow-drop-down"}
-            size={40}
-          />{" "}
-          TimeTable :-
+          TimeTable :-{" "}
         </Text>
       </TouchableOpacity>
       <View style={{ height: 3, backgroundColor: "#ccc", width: "100%" }} />
@@ -102,7 +122,7 @@ const HomeScreen = () => {
       <Text
         style={{
           alignItems: "right",
-          marginLeft: 15,
+          marginLeft: 20,
           fontSize: 20,
           fontWeight: 500,
           marginTop: 35,
@@ -171,7 +191,7 @@ const HomeScreen = () => {
       <Text
         style={{
           alignItems: "right",
-          marginLeft: 15,
+          marginLeft: 20,
           fontSize: 20,
           fontWeight: 500,
           marginTop: 20,
@@ -229,7 +249,7 @@ const HomeScreen = () => {
           marginBottom: 30,
         }}
       >
-        This App is Powered by @PrathamTechlab
+        This App is Created by @Prathamu200
       </Text>
     </ScrollView>
   );

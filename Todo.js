@@ -133,19 +133,25 @@ export default function Todo({ onTodoLengthChange }) {
       <ScrollView style={styles.taskList}>
         {/* Title */}
         <Text style={styles.sectionTitle}> Plan's for today</Text>
-        <View style={styles.items}>
-          {todo.map((item) => {
-            return (
-              <Task
-                key={item.id}
-                item={item}
-                CompletedTask={CompletedTask}
-                DeleteTask={DeleteTask}
-              />
-            );
-          })}
-          {/* This is here list of tasks */}
-        </View>
+        {todo.length === 0 ? (
+          <View style={styles.emptyList}>
+            <Text style={styles.emptyListText}>No tasks for today!</Text>
+          </View>
+        ) : (
+          <View style={styles.items}>
+            {todo.map((item) => {
+              return (
+                <Task
+                  key={item.id}
+                  item={item}
+                  CompletedTask={CompletedTask}
+                  DeleteTask={DeleteTask}
+                />
+              );
+            })}
+            {/* This is here list of tasks */}
+          </View>
+        )}
       </ScrollView>
       {/* Adding new task */}
       <View style={styles.addTask}>
@@ -213,6 +219,17 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     justifyContent: "center",
     borderRadius: 25,
+  },
+  emptyList: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  emptyListText: {
+    fontSize: 18,
+    color: "#666",
+    fontStyle: "italic",
   },
 });
 

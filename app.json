@@ -23,7 +23,7 @@
         "foregroundImage": "./assets/collegehelp_icon.jpg",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.prathamtechlab.collegeHelp"
+      "package": "com.prathamu200.collegeHelp"
     },
     "web": {
       "favicon": "./assets/favicon.png"

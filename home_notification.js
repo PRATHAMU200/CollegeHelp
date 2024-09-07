@@ -113,25 +113,6 @@ const HomeNotification = ({ onScroll }) => {
     }
   }, [tableData]);
 
-  // const timetable = [
-  //   {
-  //     classType: "Class",
-  //     starttime: `${time.getHours()}:${time.getMinutes()}`,
-  //     endtime: `${time.getHours()}:${time.getMinutes()}`,
-  //     day: "Monday",
-  //     subjectCode: "MA125",
-  //     subjectTitle: "joke",
-  //     location: "Ab3-11",
-  //   },
-  //   {
-  //     classType: "Lab",
-  //     starttime: `${time.getHours()}:${time.getMinutes()}`,
-  //     endtime: `${time.getHours()}:${time.getMinutes()}`,
-  //     day: "Monday",
-  //     course: "EE125",
-  //     location: "TW1-11",
-  //   },
-  // ];
   return (
     <ScrollView
       style={styles.Notification_Home_View}
