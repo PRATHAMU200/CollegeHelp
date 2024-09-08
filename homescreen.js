@@ -9,17 +9,58 @@ import {
   Image,
   ScrollView,
   Alert,
+  Modal,
+  TextInput,
 } from "react-native";
 import { useState } from "react";
 import env from "./env";
 import TimeTable from "./timetable";
 import HomeNotification from "./home_notification";
 import { Icon } from "react-native-elements";
+import AdvertisementBanner from "./AdvertisementBanner";
 
 const HomeScreen = () => {
   const [isTimeTableOpen, setIsTimeTableOpen] = useState(false);
-
+  const [modalVisible, setModalVisible] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
   //const url = "https://mercykknight.github.io";
+  const DISCORD_WEBHOOK_URL = env.DISCORD_WEBHOOK_API;
+
+  const sendMessageToDiscord = async () => {
+    if (!name || !email || !message) {
+      Alert.alert("Error", "Please fill in all fields");
+      return;
+    }
+
+    const discordMessage = {
+      content: `New contact message:\n**Name:** ${name}\n**Email:** ${email}\n**Message:** ${message}`,
+    };
+
+    try {
+      const response = await fetch(DISCORD_WEBHOOK_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(discordMessage),
+      });
+
+      if (response.ok) {
+        Alert.alert("Success", "Message sent successfully!");
+        setName("");
+        setEmail("");
+        setMessage("");
+        setModalVisible(false);
+      } else {
+        Alert.alert("Error", "Failed to send message. Please try again.");
+      }
+    } catch (error) {
+      Alert.alert("Error", "An error occurred. Please try again.");
+    }
+  };
+
   const handleLinkPress = (url) => {
     if (url === env.API_URL) {
       Alert.alert(
@@ -72,6 +113,7 @@ const HomeScreen = () => {
           Simplify your college experience with us.
         </Text>
       </View>
+      <AdvertisementBanner />
 
       {/*Notification Bar for CLass notification: */}
       <Text
@@ -211,21 +253,119 @@ const HomeScreen = () => {
           flexWrap: "wrap",
         }}
       >
-        <TouchableOpacity
-          onPress={() =>
-            handleLinkPress("https://github.com/prathamu200/collegehelp")
-          }
-        >
+        {/* Contact Us Button */}
+        <TouchableOpacity onPress={() => setModalVisible(true)}>
           <View style={{ flexDirection: "column", alignItems: "center" }}>
             <Image
-              source={require("./assets/contribute.png")}
+              source={require("./assets/contribute.png")} // Replace with an appropriate image
               style={{ width: 100, height: 100, borderRadius: 50 }}
             />
-            <Text style={{ marginLeft: 10, fontSize: 18 }}>
-              Contribute Project
-            </Text>
+            <Text style={{ marginLeft: 10, fontSize: 18 }}>Contact Us</Text>
           </View>
         </TouchableOpacity>
+
+        {/* Contact Us Modal */}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => {
+            setModalVisible(!modalVisible);
+          }}
+        >
+          <View
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+              backgroundColor: "rgba(0,0,0,0.5)",
+            }}
+          >
+            <View
+              style={{
+                backgroundColor: "white",
+                padding: 20,
+                borderRadius: 20,
+                width: "90%",
+                alignItems: "center",
+              }}
+            >
+              <Text style={{ fontSize: 20, marginBottom: 20 }}>Contact Us</Text>
+              <TextInput
+                placeholder="Name"
+                style={{
+                  width: "100%",
+                  borderBottomWidth: 1,
+                  marginBottom: 20,
+                  padding: 10,
+                }}
+                value={name}
+                onChangeText={setName}
+              />
+              <TextInput
+                placeholder="Email/Number"
+                style={{
+                  width: "100%",
+                  borderBottomWidth: 1,
+                  marginBottom: 20,
+                  padding: 10,
+                }}
+                value={email}
+                onChangeText={setEmail}
+              />
+              <TextInput
+                placeholder="Message"
+                multiline
+                numberOfLines={4}
+                style={{
+                  width: "100%",
+                  borderWidth: 1,
+                  borderRadius: 10,
+                  padding: 10,
+                  textAlignVertical: "top",
+                  marginBottom: 20,
+                }}
+                value={message}
+                onChangeText={setMessage}
+              />
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-around",
+                  width: "100%",
+                }}
+              >
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: "#4CAF50", // Green color
+                    padding: 10,
+                    borderRadius: 20,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                  onPress={sendMessageToDiscord}
+                >
+                  <Text style={{ color: "#fff", fontSize: 18 }}>
+                    Send Message
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: "#f44336", // Red color
+                    padding: 10,
+                    borderRadius: 20,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                  onPress={() => setModalVisible(!modalVisible)}
+                >
+                  <Text style={{ color: "#fff", fontSize: 18 }}>Close</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
         <TouchableOpacity onPress={() => handleLinkPress(env.API_URL)}>
           <View style={{ flexDirection: "column", alignItems: "center" }}>
             <Image

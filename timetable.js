@@ -233,6 +233,7 @@ const TimeTable = () => {
       </View>
 
       <Modal
+        animationType="slide"
         visible={modalVisible}
         transparent={true}
         onRequestClose={() => setModalVisible(false)}
@@ -338,7 +339,14 @@ const TimeTable = () => {
               }}
             >
               <TouchableOpacity
-                style={{ marginTop: 20 }}
+                style={{
+                  marginTop: 20,
+                  elevation: 2,
+                  borderRadius: 20,
+                  borderColor: "blue",
+                  padding: 10,
+                  paddingHorizontal: 20,
+                }}
                 onPress={handleSubmit}
               >
                 <Text>Submit</Text>
@@ -346,7 +354,14 @@ const TimeTable = () => {
               {tableData[selectedDay] &&
                 tableData[selectedDay][selectedHour].classType !== "" && (
                   <TouchableOpacity
-                    style={{ marginTop: 20 }}
+                    style={{
+                      marginTop: 20,
+                      elevation: 2,
+                      borderRadius: 20,
+                      borderColor: "red",
+                      padding: 10,
+                      paddingHorizontal: 20,
+                    }}
                     onPress={handleDelete}
                   >
                     <Text>Delete</Text>

@@ -2,7 +2,7 @@
   "expo": {
     "name": "collegeHelp",
     "slug": "collegeHelp",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/collegehelp_icon.jpg",
     "userInterfaceStyle": "light",
@@ -23,7 +23,7 @@
         "foregroundImage": "./assets/collegehelp_icon.jpg",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.prathamu200.collegeHelp"
+      "package": "com.prathamtechlab.collegeHelp"
     },
     "web": {
       "favicon": "./assets/favicon.png"

@@ -72,6 +72,16 @@ const DriveScreen = () => {
           return { ...fileInfo, name: fileName };
         })
       );
+      // Sort files by type (folders first) and then by date in descending order
+      filesData.sort((a, b) => {
+        if (a.isDirectory && !b.isDirectory) {
+          return -1; // Folders come before files
+        } else if (!a.isDirectory && b.isDirectory) {
+          return 1; // Files come after folders
+        } else {
+          return b.modificationTime - a.modificationTime; // Sort by date in descending order
+        }
+      });
       setFiles(filesData);
     } catch (error) {
       console.log("Error loading files:", error);
@@ -133,16 +143,65 @@ const DriveScreen = () => {
     setModalVisible(true);
   };
 
-  const handleCameraImage = async () => {
+  const handleFileUpload = async () => {
     try {
-      // Request camera permissions
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
         Alert.alert(
           "Permission required",
-          "Camera permissions are required to take a photo."
+          "Media library permissions are required to upload files."
         );
         return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsMultipleSelection: true,
+        quality: 1,
+      });
+
+      if (!result.canceled) {
+        const selectedImages = result.assets;
+        const imageUris = selectedImages.map((image) => image.uri);
+
+        // Filter out non-image files (jpg, jpeg, png)
+        const filteredImageUris = imageUris.filter((uri) => {
+          const fileType = uri.split(".").pop().toLowerCase();
+          return ["jpg", "jpeg", "png"].includes(fileType);
+        });
+
+        // Upload the selected images to the current directory
+        const uploadPromises = filteredImageUris.map((uri) => {
+          const fileName = uri.split("/").pop();
+          const destinationUri = `${currentPath}/${fileName}`;
+          return FileSystem.copyAsync({ from: uri, to: destinationUri });
+        });
+
+        await Promise.all(uploadPromises);
+        loadFilesAndFolders(); // Refresh the file list
+        setModalVisible(false);
+      } else {
+        console.log("Image picker was canceled.");
+      }
+    } catch (error) {
+      console.error("Error uploading files:", error);
+      Alert.alert("Error", "An error occurred while uploading files.");
+    }
+  };
+
+  const handleCameraImage = async () => {
+    try {
+      const { status } = await ImagePicker.getCameraPermissionsAsync();
+      if (status !== "granted") {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== "granted") {
+          Alert.alert(
+            "Permission required",
+            "Camera permissions are required to take a photo."
+          );
+          return;
+        }
       }
 
       // Launch the camera to take a photo
@@ -322,6 +381,12 @@ const DriveScreen = () => {
               <View style={styles.modalItem}>
                 <Icon name="folder" type="material" size={24} color="#666" />
                 <Text style={styles.modalText}>Create folder</Text>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleFileUpload}>
+              <View style={styles.modalItem}>
+                <Icon name="upload" size={24} color="#666" />
+                <Text style={styles.modalText}>Upload Image</Text>
               </View>
             </TouchableOpacity>
             <TouchableOpacity onPress={handleCameraImage}>
