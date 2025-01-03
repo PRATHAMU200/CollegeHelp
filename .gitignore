@@ -2,6 +2,7 @@
 
 .env
 env.js
+firebaseConfig.js
 comments.txt
 
 #android
