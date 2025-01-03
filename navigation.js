@@ -6,6 +6,7 @@ import { Icon } from "react-native-elements";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
 import DriveScreen from "./drivescreen";
+import ChatScreen from "./chatscreen";
 const Tab = createBottomTabNavigator();
 
 const Navigation = () => {
@@ -44,8 +45,10 @@ const Navigation = () => {
             iconName = focused ? "home" : "home";
           } else if (route.name === "Todo List") {
             iconName = focused ? "list" : "list";
-          } else if (route.name === "Your Gallary") {
-            iconName = "photo";
+          } else if (route.name === "Your Drive") {
+            iconName = focused ? "photo" : "photo";
+          } else if (route.name === "College Connect") {
+            iconName = "message";
           }
 
           // You can return any component that you like here!
@@ -89,7 +92,8 @@ const Navigation = () => {
         {() => <Todo onTodoLengthChange={setNumNavigation} />}
       </Tab.Screen>
 
-      <Tab.Screen name="Your Gallary" component={DriveScreen} />
+      <Tab.Screen name="Your Drive" component={DriveScreen} />
+      <Tab.Screen name="College Connect" component={ChatScreen} />
       {/* <Tab.Screen name="DTU MAP" component={DTUMap} /> */}
     </Tab.Navigator>
   );

@@ -3,6 +3,7 @@ import {
   View,
   Text,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   FlatList,
   StyleSheet,
   Dimensions,
@@ -10,12 +11,16 @@ import {
   TextInput,
   Alert,
   Image,
+  Keyboard,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import * as Sharing from "expo-sharing"; // Import the library
 import FileViewer from "react-native-file-viewer";
 import { Icon } from "react-native-elements";
+import * as IntentLauncher from "expo-intent-launcher";
 import * as FileSystem from "expo-file-system";
+import * as DocumentPicker from "expo-document-picker";
 import ImageViewer from "react-native-image-zoom-viewer";
 import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from "expo-image-manipulator";
@@ -26,14 +31,27 @@ const DriveScreen = () => {
   const [files, setFiles] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [imageGallery, setImageGallery] = useState([]); // Array of image URLs
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0); // Index of the currently selected image
   const [selectedFileContent, setSelectedFileContent] = useState(null);
   const [selectedFileName, setSelectedFileName] = useState("");
+  const [selectedFiles, setSelectedFiles] = useState([]); // Array of selected files
+  const [isSelectionMode, setIsSelectionMode] = useState(false); // Whether selection mode is active
+
   const [renameItem, setRenameItem] = useState(null);
   const [newName, setNewName] = useState("");
   const [renameModalVisible, setRenameModalVisible] = useState(false);
 
   const rootPath = `${FileSystem.documentDirectory}CollegeHelpDrive`; // Update this line
   const [currentPath, setCurrentPath] = useState(rootPath); // Add this line
+
+  useEffect(() => {
+    if (selectedFiles.length > 0) {
+      setIsSelectionMode(true); // Activate selection mode if files are selected
+    } else {
+      setIsSelectionMode(false); // Deactivate selection mode if no files are selected
+    }
+  }, [selectedFiles]);
 
   useEffect(() => {
     loadFilesAndFolders();
@@ -58,6 +76,12 @@ const DriveScreen = () => {
 
     setupFileSystem();
   }, []);
+
+  const handleOutsidePress = () => {
+    setIsSelectionMode(false);
+    setSelectedFiles([]); // Clear selected files
+    Keyboard.dismiss(); // Optional: dismiss keyboard if it's open
+  };
 
   const loadFilesAndFolders = async () => {
     try {
@@ -110,14 +134,21 @@ const DriveScreen = () => {
     }
   };
 
+  const handleFileSelect = (item) => {
+    if (isSelectionMode) {
+      setSelectedFiles((prev) =>
+        prev.some((file) => file.uri === item.uri)
+          ? prev.filter((file) => file.uri !== item.uri)
+          : [...prev, item]
+      );
+    } else {
+      handleFileClick(item); // Open file normally if not in selection mode
+    }
+  };
+
   const handleFileClick = async (file) => {
     if (file.isDirectory) {
       setCurrentPath(`${currentPath}/${file.name}`);
-      console.log(
-        "Navigating to directory:",
-        file.uri,
-        `${currentPath}/${file.name}`
-      );
     } else {
       try {
         const fileUri = file.uri;
@@ -128,10 +159,38 @@ const DriveScreen = () => {
 
         if (["jpg", "jpeg", "png"].includes(fileType)) {
           // For image files, display them in the app
+          const imageFiles = files
+            .filter((f) =>
+              ["jpg", "jpeg", "png"].includes(
+                f.name.split(".").pop().toLowerCase()
+              )
+            )
+            .map((f) => f.uri.replace(/^file:\/\/\//, "file:///"));
+
+          const clickedImageIndex = imageFiles.indexOf(cleanedUri);
+          setImageGallery(imageFiles);
+          setSelectedImageIndex(clickedImageIndex);
           setSelectedFileContent(cleanedUri);
           setSelectedFileName(file.name);
+        } else if (["pdf", "doc", "docx"].includes(fileType)) {
+          // Handle PDF and document files using IntentLauncher
+          FileSystem.getContentUriAsync(file.uri).then((cUri) => {
+            console.log(cUri);
+            IntentLauncher.startActivityAsync("android.intent.action.VIEW", {
+              data: cUri,
+              flags: 1,
+              type:
+                fileType === "pdf" ? "application/pdf" : "application/msword",
+            });
+          });
         } else {
-          alert("Could not open the file!!");
+          FileSystem.getContentUriAsync(file.uri).then((cUri) => {
+            console.log(cUri);
+            IntentLauncher.startActivityAsync("android.intent.action.VIEW", {
+              data: cUri,
+              flags: 1,
+            });
+          });
         }
       } catch (error) {
         console.log("Error opening file:", error);
@@ -144,6 +203,55 @@ const DriveScreen = () => {
   };
 
   const handleFileUpload = async () => {
+    try {
+      // Request file picker permission (if required)
+      const result = await DocumentPicker.getDocumentAsync({
+        type: "*/*", // This allows all file types
+      });
+      console.log(result);
+      if (result.canceled) {
+        console.log("File picker was canceled.");
+        return;
+      }
+      // Extract file data from the result
+      const file = result.assets[0]; // The file is in the first object of the assets array
+      const { uri, name, mimeType, size } = file;
+
+      // Check if name is available
+      if (!name) {
+        Alert.alert("Error", "File name is missing.");
+        return;
+      }
+
+      // Extract the file type (extension) and validate
+      const fileType = name.split(".").pop().toLowerCase();
+      // const supportedTypes = ["pdf", "docx", "xlsx"]; // Supported file types
+      // if (!supportedTypes.includes(fileType)) {
+      //   Alert.alert(
+      //     "Unsupported File",
+      //     "Only PDF, DOCX, and XLSX files are supported."
+      //   );
+      //   return;
+      // }
+
+      // Define the destination path in the app directory
+      const destinationUri = `${FileSystem.documentDirectory}/CollegeHelpDrive/${name}`;
+
+      // Copy the selected file to the app directory
+      await FileSystem.copyAsync({ from: uri, to: destinationUri });
+
+      // Optionally, you can handle the uploaded file here (e.g., store it in a list or refresh)
+      console.log(`File saved at ${destinationUri}`);
+
+      // Refresh the file list (if you are displaying files in a UI)
+      loadFilesAndFolders();
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      Alert.alert("Error", "An error occurred while uploading the file.");
+    }
+  };
+
+  const handleImageUpload = async () => {
     try {
       const { status } =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -248,34 +356,41 @@ const DriveScreen = () => {
   };
 
   const handleLongPress = (item) => {
-    Alert.alert(
-      "Options",
-      `What would you like to do with "${item.name}"?`,
-      [
-        { text: "Rename", onPress: () => handleRename(item) },
-        { text: "Share", onPress: () => shareFile(item) },
-        { text: "Delete", onPress: () => handleDelete(item) },
-        { text: "Cancel", style: "cancel" },
-      ],
-      { cancelable: true }
+    // Alert.alert(
+    //   "Options",
+    //   `What would you like to do with "${item.name}"?`,
+    //   [
+    //     { text: "Rename", onPress: () => handleRename(item) },
+    //     { text: "Share", onPress: () => shareFile(item) },
+    //     { text: "Delete", onPress: () => handleDelete(item) },
+    //     { text: "Cancel", style: "cancel" },
+    //   ],
+    //   { cancelable: true }
+    // );
+    setIsSelectionMode(true); // Enable selection mode
+    setSelectedFiles(
+      (prev) =>
+        prev.some((file) => file.uri === item.uri)
+          ? prev.filter((file) => file.uri !== item.uri) // Deselect if already selected
+          : [...prev, item] // Add to selection if not already selected
     );
   };
 
-  const openFile = async (fileUri) => {
-    try {
-      // Check if the file exists
-      const fileInfo = await FileSystem.getInfoAsync(fileUri);
+  // const openFile = async (fileUri) => {
+  //   try {
+  //     // Check if the file exists
+  //     const fileInfo = await FileSystem.getInfoAsync(fileUri);
 
-      if (fileInfo.exists) {
-        // Open the file using the native file viewer
-        await FileViewer.open(fileUri);
-      } else {
-        alert("File does not exist");
-      }
-    } catch (error) {
-      console.error("Error opening file:", error);
-    }
-  };
+  //     if (fileInfo.exists) {
+  //       // Open the file using the native file viewer
+  //       await FileViewer.open(fileUri);
+  //     } else {
+  //       alert("File does not exist");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error opening file:", error);
+  //   }
+  // };
 
   const handleDelete = async (item) => {
     try {
@@ -287,10 +402,30 @@ const DriveScreen = () => {
     }
   };
 
+  const handleDeleteSelected = async () => {
+    try {
+      for (const file of selectedFiles) {
+        await FileSystem.deleteAsync(file.uri);
+      }
+      loadFilesAndFolders(); // Refresh file list
+      cancelSelection();
+    } catch (error) {
+      console.error("Error deleting files:", error);
+    }
+  };
+
   const handleRename = (item) => {
     setRenameItem(item);
     setNewName(item.name); // Pre-fill with current name
     setRenameModalVisible(true);
+  };
+
+  const handleFileInfo = (item) => {
+    Alert.alert(
+      "File Info",
+      `Name: ${item.name}\nSize: ${item.size || "Unknown"} bytes`,
+      [{ text: "Rename", onPress: () => handleRename(item) }, { text: "OK" }]
+    );
   };
 
   const shareFile = async (file) => {
@@ -306,6 +441,21 @@ const DriveScreen = () => {
       Alert.alert("Error", "Unable to share this file.");
     }
   };
+  const handleShareSelected = async () => {
+    try {
+      for (const file of selectedFiles) {
+        await Sharing.shareAsync(file.uri);
+      }
+      cancelSelection();
+    } catch (error) {
+      console.error("Error sharing files:", error);
+    }
+  };
+
+  const cancelSelection = () => {
+    setIsSelectionMode(false);
+    setSelectedFiles([]);
+  };
 
   const handleGoBack = () => {
     // Check if the currentPath is the root path
@@ -319,192 +469,443 @@ const DriveScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.pathContainer}>
-        <TouchableOpacity onPress={handleGoBack}>
-          {/* <Text style={styles.goBackButtonText}>Go Back</Text> */}
-          <Icon name="arrow-back" type="material" size={24} color="#666" />
-        </TouchableOpacity>
-        <Text style={styles.pathText}>{currentPath.replace(rootPath, "")}</Text>
-      </View>
+    <TouchableWithoutFeedback onPress={handleOutsidePress}>
+      <View style={styles.container}>
+        {/* Upper top bar for action functions */}
+        <View style={styles.pathContainer}>
+          {isSelectionMode ? (
+            // Action Bar in Selection Mode
+            <View style={styles.actionBar}>
+              <TouchableOpacity onPress={cancelSelection}>
+                <Icon name="close" size={24} color="#000" />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleShareSelected}>
+                <Icon name="share" size={24} color="#000" />
+              </TouchableOpacity>
 
-      {files.length === 0 ? (
-        <View style={styles.emptyScreen}>
-          <Text>No files or folders</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={files}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.fileItem}
-              onPress={() => handleFileClick(item)}
-              onLongPress={() => handleLongPress(item)}
-            >
-              <View style={styles.fileContent}>
-                {item.isDirectory ? (
-                  <View style={styles.folderPreview}>
-                    <Icon name="folder" size={40} color="#FFD700" />
-                    <Text style={styles.fileName}>{item.name}</Text>
-                  </View>
-                ) : (
-                  <Image
-                    source={{ uri: item.uri }}
-                    style={styles.imagePreview}
-                  />
-                )}
-              </View>
-            </TouchableOpacity>
-          )}
-          keyExtractor={(item) => item.uri}
-          numColumns={3}
-        />
-      )}
-      <TouchableOpacity style={styles.addButton} onPress={handleAddFile}>
-        <Text style={styles.addButtonText}>+</Text>
-      </TouchableOpacity>
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => {
-          setModalVisible(false);
-        }}
-        onDismiss={() => setModalVisible(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalContainer}
-          onPress={() => setModalVisible(false)}
-        >
-          <View style={styles.modalContent}>
-            <TouchableOpacity onPress={handleCreateFolder}>
-              <View style={styles.modalItem}>
-                <Icon name="folder" type="material" size={24} color="#666" />
-                <Text style={styles.modalText}>Create folder</Text>
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleFileUpload}>
-              <View style={styles.modalItem}>
-                <Icon name="upload" size={24} color="#666" />
-                <Text style={styles.modalText}>Upload Image</Text>
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleCameraImage}>
-              <View style={styles.modalItem}>
+              {selectedFiles.length === 1 && (
+                <TouchableOpacity
+                  onPress={() => handleFileInfo(selectedFiles[0])}
+                >
+                  <Icon name="edit" size={24} color="#000" />
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity onPress={handleDeleteSelected}>
+                <Icon name="delete" size={24} color="#000" />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            // Navigation Bar in Normal Mode
+            <View style={styles.navigationBar}>
+              <TouchableOpacity onPress={handleGoBack}>
                 <Icon
-                  name="camera"
-                  type="font-awesome"
+                  name="arrow-back"
+                  type="material"
                   size={24}
                   color="#666"
                 />
-                <Text style={styles.modalText}>Scan Image</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </Modal>
-      {loading && <ActivityIndicator size="large" color="#0000ff" />}
-      {/* Modal to display file content */}
-      <Modal
-        animationType="slide"
-        transparent={false}
-        visible={selectedFileContent !== null}
-        onRequestClose={() => setSelectedFileContent(null)}
-      >
-        <View style={styles.imageViewerContainer}>
-          {selectedFileContent &&
-          (selectedFileName.endsWith(".jpg") ||
-            selectedFileName.endsWith(".jpeg") ||
-            selectedFileName.endsWith(".png")) ? (
-            <ImageViewer
-              imageUrls={[{ url: selectedFileContent }]}
-              enableImageZoom={true}
-              enableSwipeDown={true}
-              onSwipeDown={() => setSelectedFileContent(null)}
-              style={styles.imageViewer}
-            />
-          ) : (
-            <Text style={styles.unsupportedText}>Unsupported file format.</Text>
+              </TouchableOpacity>
+              <Text style={styles.pathText}>
+                {currentPath.replace(rootPath, "")}
+              </Text>
+            </View>
           )}
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={() => setSelectedFileContent(null)}
-          >
-            <Text style={styles.closeButtonText}>Close</Text>
-          </TouchableOpacity>
         </View>
-      </Modal>
 
-      {/* Rename diloag*/}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={renameModalVisible}
-        onRequestClose={() => setRenameModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.renameModalContent}>
-            <Text style={styles.renameModalTitle}>Rename Folder/File</Text>
-            <TextInput
-              style={styles.renameInput}
-              value={newName}
-              onChangeText={setNewName}
-              placeholder="Enter new name"
-            />
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-around",
-                width: "100%",
-                marginBottom: 10,
-              }}
-            >
-              <TouchableOpacity
-                style={styles.renameButton}
-                onPress={async () => {
-                  if (renameItem) {
-                    const newUri = `${currentPath}/${newName}`;
-
-                    try {
-                      // Check if the new file/folder name already exists
-                      const newItemInfo = await FileSystem.getInfoAsync(newUri);
-
-                      if (newItemInfo.exists) {
-                        // If the file/folder already exists, show an alert
-                        Alert.alert(
-                          "Error",
-                          "A file or folder with this name already exists."
-                        );
-                      } else {
-                        // If the new name is unique, proceed with renaming
-                        await FileSystem.moveAsync({
-                          from: renameItem.uri,
-                          to: newUri,
-                        });
-                        loadFilesAndFolders(); // Refresh the file list
-                        setRenameModalVisible(false);
-                      }
-                    } catch (error) {
-                      console.error("Error renaming file/folder:", error);
-                      Alert.alert("Error", "Cannot rename this file/folder.");
-                    }
-                  }
+        {/* Listing all files/folders */}
+        {files.length === 0 ? (
+          <View style={styles.emptyScreen}>
+            <Text>No files or folders</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={files}
+            renderItem={({ item }) => (
+              <View style={styles.itemWrapper}>
+                <TouchableOpacity
+                  style={styles.fileItem}
+                  onPress={() => handleFileSelect(item)}
+                  onLongPress={() => handleLongPress(item)}
+                >
+                  <View style={styles.fileContent}>
+                    {item.isDirectory ? (
+                      <View style={styles.folderPreview}>
+                        <Icon name="folder" size={40} color="#FFD700" />
+                        <Text style={styles.fileName}>
+                          {item.name.length > 15
+                            ? `${item.name.slice(0, 50)}...`
+                            : item.name}
+                        </Text>
+                        {selectedFiles.some((f) => f.uri === item.uri) && (
+                          <Icon
+                            name="check-circle"
+                            size={20}
+                            color="blue"
+                            style={[
+                              styles.tickIcon,
+                              // { width: 20, height: 20, backgroundColor: "red" },
+                            ]}
+                          />
+                        )}
+                      </View>
+                    ) : (
+                      <>
+                        {item.name.endsWith(".pdf") ? (
+                          <View style={styles.filePreview}>
+                            <Icon
+                              name="picture-as-pdf"
+                              type="material"
+                              size={40}
+                              color="#FF0000"
+                            />
+                            <Text style={styles.fileName} numberOfLines={1}>
+                              {item.name.length > 40
+                                ? `${item.name.slice(0, 40)}...`
+                                : item.name}
+                            </Text>
+                            {selectedFiles.some((f) => f.uri === item.uri) && (
+                              <Icon
+                                name="check-circle"
+                                size={20}
+                                color="blue"
+                                style={[
+                                  styles.tickIcon,
+                                  // { width: 20, height: 20, backgroundColor: "red" },
+                                ]}
+                              />
+                            )}
+                          </View>
+                        ) : item.name.endsWith(".xlsx") ||
+                          item.name.endsWith(".xls") ? (
+                          <View style={styles.filePreview}>
+                            <Icon
+                              name="table-view"
+                              type="material"
+                              size={40}
+                              color="green"
+                            />
+                            <Text style={styles.fileName} numberOfLines={1}>
+                              {item.name.length > 40
+                                ? `${item.name.slice(0, 40)}...`
+                                : item.name}
+                            </Text>
+                            {selectedFiles.some((f) => f.uri === item.uri) && (
+                              <Icon
+                                name="check-circle"
+                                size={20}
+                                color="blue"
+                                style={[
+                                  styles.tickIcon,
+                                  // { width: 20, height: 20, backgroundColor: "red" },
+                                ]}
+                              />
+                            )}
+                          </View>
+                        ) : item.name.endsWith(".docs") ||
+                          item.name.endsWith(".docx") ||
+                          item.name.endsWith(".doc") ? (
+                          <View style={styles.filePreview}>
+                            <Icon
+                              name="description"
+                              type="material"
+                              size={40}
+                              color="#4788C7"
+                            />
+                            <Text style={styles.fileName} numberOfLines={1}>
+                              {item.name.length > 40
+                                ? `${item.name.slice(0, 40)}...`
+                                : item.name}
+                            </Text>
+                            {selectedFiles.some((f) => f.uri === item.uri) && (
+                              <Icon
+                                name="check-circle"
+                                size={20}
+                                color="blue"
+                                style={[
+                                  styles.tickIcon,
+                                  // { width: 20, height: 20, backgroundColor: "red" },
+                                ]}
+                              />
+                            )}
+                          </View>
+                        ) : item.name.endsWith(".mp4") ||
+                          item.name.endsWith(".mp3") ||
+                          item.name.endsWith(".mpg") ||
+                          item.name.endsWith(".avi") ||
+                          item.name.endsWith(".wav") ||
+                          item.name.endsWith(".mkv") ? (
+                          <View style={styles.filePreview}>
+                            <Icon
+                              name="movie"
+                              type="material"
+                              size={40}
+                              color="#F35253"
+                            />
+                            <Text style={styles.fileName} numberOfLines={1}>
+                              {item.name.length > 40
+                                ? `${item.name.slice(0, 40)}...`
+                                : item.name}
+                            </Text>
+                            {selectedFiles.some((f) => f.uri === item.uri) && (
+                              <Icon
+                                name="check-circle"
+                                size={20}
+                                color="blue"
+                                style={[
+                                  styles.tickIcon,
+                                  // { width: 20, height: 20, backgroundColor: "red" },
+                                ]}
+                              />
+                            )}
+                          </View>
+                        ) : item.name.endsWith(".jpeg") ||
+                          item.name.endsWith(".jpg") ||
+                          item.name.endsWith(".png") ||
+                          item.name.endsWith(".gif") ? (
+                          <View style={styles.imageContainer}>
+                            <Image
+                              source={{ uri: item.uri }}
+                              style={[
+                                styles.imagePreview,
+                                selectedFiles.some((f) => f.uri === item.uri) &&
+                                  styles.selectedFile,
+                              ]}
+                            />
+                            {selectedFiles.some((f) => f.uri === item.uri) && (
+                              <Icon
+                                name="check-circle"
+                                size={20}
+                                color="blue"
+                                style={[
+                                  styles.tickIcon,
+                                  // { width: 20, height: 20, backgroundColor: "red" },
+                                ]}
+                              />
+                            )}
+                          </View>
+                        ) : (
+                          <View style={styles.filePreview}>
+                            <Icon
+                              name="text-snippet"
+                              type="material"
+                              size={40}
+                              color="gray"
+                            />
+                            <Text style={styles.fileName} numberOfLines={1}>
+                              {item.name.length > 40
+                                ? `${item.name.slice(0, 40)}...`
+                                : item.name}
+                            </Text>
+                            {selectedFiles.some((f) => f.uri === item.uri) && (
+                              <Icon
+                                name="check-circle"
+                                size={20}
+                                color="blue"
+                                style={[
+                                  styles.tickIcon,
+                                  // { width: 20, height: 20, backgroundColor: "red" },
+                                ]}
+                              />
+                            )}
+                          </View>
+                        )}
+                      </>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              </View>
+            )}
+            keyExtractor={(item) => item.uri}
+            numColumns={3}
+          />
+        )}
+        <TouchableOpacity style={styles.addButton} onPress={handleAddFile}>
+          <Text style={styles.addButtonText}>+</Text>
+        </TouchableOpacity>
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => {
+            setModalVisible(false);
+          }}
+          onDismiss={() => setModalVisible(false)}
+        >
+          <TouchableOpacity
+            style={styles.modalContainer}
+            onPress={() => setModalVisible(false)}
+          >
+            <View style={styles.modalContent}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  paddingBottom: 10,
                 }}
               >
-                <Text style={styles.renameButtonText}>Rename</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => setRenameModalVisible(false)}
+                <TouchableOpacity onPress={handleCreateFolder}>
+                  <View style={styles.modalItem}>
+                    <Icon
+                      name="folder"
+                      type="material"
+                      size={24}
+                      color="#666"
+                    />
+                    <Text style={styles.modalText}>Create folder</Text>
+                  </View>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleImageUpload}>
+                  <View style={styles.modalItem}>
+                    <Icon name="upload" size={24} color="#666" />
+                    <Text style={styles.modalText}>Upload Image</Text>
+                  </View>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleCameraImage}>
+                  <View style={styles.modalItem}>
+                    <Icon
+                      name="camera"
+                      type="font-awesome"
+                      size={24}
+                      color="#666"
+                    />
+                    <Text style={styles.modalText}>Scan Image</Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-evenly",
+                }}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
+                <TouchableOpacity onPress={handleFileUpload}>
+                  <View style={styles.modalItem}>
+                    <Icon name="cloud" size={24} color="#666" />
+                    <Text style={styles.modalText}>Upload File</Text>
+                  </View>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleFileUpload}>
+                  <View style={styles.modalItem}>
+                    <Icon name="description" size={24} color="#666" />
+                    <Text style={styles.modalText}>Upload File</Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+        {loading && <ActivityIndicator size="large" color="#0000ff" />}
+        {/* Modal to display file content */}
+        <Modal
+          animationType="slide"
+          transparent={false}
+          visible={selectedFileContent !== null}
+          onRequestClose={() => setSelectedFileContent(null)}
+        >
+          <View style={styles.imageViewerContainer}>
+            {selectedFileContent &&
+            (selectedFileName.endsWith(".jpg") ||
+              selectedFileName.endsWith(".jpeg") ||
+              selectedFileName.endsWith(".png")) ? (
+              <ImageViewer
+                imageUrls={imageGallery.map((url) => ({ url }))}
+                index={selectedImageIndex}
+                enableImageZoom={true}
+                enableSwipeDown={true}
+                onSwipeDown={() => {
+                  setImageGallery([]);
+                  setSelectedImageIndex(0);
+                  setSelectedFileContent(null);
+                }}
+                style={styles.imageViewer}
+              />
+            ) : (
+              <Text style={styles.unsupportedText}>
+                Unsupported file format.
+              </Text>
+            )}
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setSelectedFileContent(null)}
+            >
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </Modal>
+
+        {/* Rename diloag*/}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={renameModalVisible}
+          onRequestClose={() => setRenameModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.renameModalContent}>
+              <Text style={styles.renameModalTitle}>Rename Folder/File</Text>
+              <TextInput
+                style={styles.renameInput}
+                value={newName}
+                onChangeText={setNewName}
+                placeholder="Enter new name"
+              />
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-around",
+                  width: "100%",
+                  marginBottom: 10,
+                }}
+              >
+                <TouchableOpacity
+                  style={styles.renameButton}
+                  onPress={async () => {
+                    if (renameItem) {
+                      const newUri = `${currentPath}/${newName}`;
+
+                      try {
+                        // Check if the new file/folder name already exists
+                        const newItemInfo = await FileSystem.getInfoAsync(
+                          newUri
+                        );
+
+                        if (newItemInfo.exists) {
+                          // If the file/folder already exists, show an alert
+                          Alert.alert(
+                            "Error",
+                            "A file or folder with this name already exists."
+                          );
+                        } else {
+                          // If the new name is unique, proceed with renaming
+                          await FileSystem.moveAsync({
+                            from: renameItem.uri,
+                            to: newUri,
+                          });
+                          loadFilesAndFolders(); // Refresh the file list
+                          setRenameModalVisible(false);
+                        }
+                      } catch (error) {
+                        console.error("Error renaming file/folder:", error);
+                        Alert.alert("Error", "Cannot rename this file/folder.");
+                      }
+                    }
+                  }}
+                >
+                  <Text style={styles.renameButtonText}>Rename</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={() => setRenameModalVisible(false)}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
-      </Modal>
-    </View>
+        </Modal>
+      </View>
+    </TouchableWithoutFeedback>
   );
 };
 
@@ -546,7 +947,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalContent: {
-    flexDirection: "row",
+    flexDirection: "column",
     justifyContent: "space-around",
     backgroundColor: "#fff",
     padding: 40,
@@ -567,10 +968,22 @@ const styles = StyleSheet.create({
     height: 300,
     resizeMode: "contain",
   },
-
+  filePreview: {
+    width: "100%", //width / 3 - 20,
+    height: width / 3 - 20,
+    alignItems: "center",
+    justifyContent: "center",
+    margin: 5,
+    backgroundColor: "#f0f0f0", // Optional background color for folders
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    elevation: 20,
+  },
   fileName: {
-    fontSize: 18, // Increase text size
-    marginLeft: 15,
+    fontSize: 12, // Increase text size
+    //marginLeft: 15,
+    padding: 2,
     color: "#333", // Darker text color
   },
   modalOverlay: {
@@ -647,6 +1060,7 @@ const styles = StyleSheet.create({
   pathText: {
     fontSize: 16,
     color: "black", //"#333",
+    marginLeft: 10,
   },
   goBackButton: {
     backgroundColor: "#4CAF50",
@@ -663,14 +1077,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
-  fileName: {
-    fontSize: 18,
-    color: "#333",
+  itemWrapper: {
+    width: width / 3 - 17, // Calculate width for 3 items per row with margins
+    margin: 5, // Add spacing between items
   },
   fileItem: {
     flex: 1,
-    padding: 5,
-    margin: 5,
+    //padding: 5,
+    //margin: 5,
     borderRadius: 10,
   },
   fileContent: {
@@ -679,14 +1093,15 @@ const styles = StyleSheet.create({
     // alignItems: "center",
   },
   imagePreview: {
-    width: width / 3 - 20, // Adjust width to fit 3 items per row with margin
-    height: width / 3 - 20, // Adjust height to fit 3 items per row with margin
+    width: "100%",
+    //width: width / 3 - 20, // Adjust width to fit 3 items per row with margin
+    height: width / 3 - 17, // Adjust height to fit 3 items per row with margin
     borderRadius: 10,
     resizeMode: "cover",
-    elevation: 10,
+    elevation: 5,
   },
   folderPreview: {
-    width: width / 3 - 20,
+    width: "100%", //width / 3 - 20,
     height: width / 3 - 20,
     justifyContent: "center",
     alignItems: "center",
@@ -695,6 +1110,35 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ddd",
     elevation: 20,
+    overflow: "hidden",
+  },
+  selectedFile: {
+    opacity: 0.5, // Dim selected files
+  },
+  imageContainer: {
+    //position: "relative",
+    //overflow: "visible",
+  },
+  tickIcon: {
+    position: "relative",
+    top: 0,
+    display: "flex",
+    left: 0,
+    //right: 5,
+    zIndex: 1, // Ensure it appears above the image
+    //backgroundColor: "rgba(0,0,0,0.5)",
+    //padding: 2,
+  },
+  navigationBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    columnGap: 10,
+  },
+  actionBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%", // Ensure the action bar spans the entire width
   },
 });
 
