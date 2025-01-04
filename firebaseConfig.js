@@ -5,6 +5,7 @@ import {
   getFirestore as getFirestoreInstance,
 } from "firebase/firestore";
 //import { getAnalytics } from "firebase/analytics";
+//import { getAnalytics } from "expo-firebase-analytics";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBnQqB8Uf_cqr5r9qnZXlF10oKKtItfTTM",

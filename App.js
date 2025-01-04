@@ -1,7 +1,9 @@
 import { StatusBar } from "expo-status-bar";
-import { useContext } from "react";
+import { useContext, useState, useEffect } from "react";
 import Navigation from "./navigation.js";
 import { NavigationContainer } from "@react-navigation/native";
+import { db, app } from "./firebaseConfig";
+import { getAnalytics, logEvent } from "firebase/analytics";
 import {
   StyleSheet,
   Text,

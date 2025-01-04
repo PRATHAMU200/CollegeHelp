@@ -6,6 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   FlatList,
+  Clipboard,
 } from "react-native";
 
 const Task = (props) => {
@@ -13,6 +14,9 @@ const Task = (props) => {
     <TouchableOpacity
       style={[styles.item, props.item.completed && { opacity: 0.5 }]}
       onPress={() => props.CompletedTask(props.item.id)}
+      onLongPress={() => {
+        Clipboard.setString(props.item.title);
+      }}
     >
       <View style={styles.square}>
         <Icon

@@ -32,9 +32,10 @@ import {
   updateDoc,
   deleteDoc,
 } from "firebase/firestore";
-import { db } from "./firebaseConfig";
+import { db, app } from "./firebaseConfig";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { generateUserId } from "./utils";
+import { getAnalytics, logEvent } from "firebase/analytics";
 
 const ChatScreen = () => {
   const [message, setMessage] = useState("");
@@ -71,6 +72,13 @@ const ChatScreen = () => {
     avatar16: require("./assets/avatar16.jpg"),
   };
   const netInfo = useNetInfo();
+  // useEffect(() => {
+  //   const analytics = getAnalytics();
+  //   logEvent(analytics, "screen_view", {
+  //     firebase_screen: "ChatScreen",
+  //   });
+  // }, []);
+
   useEffect(() => {
     setIsConnected(netInfo.isConnected);
   }, [netInfo]);

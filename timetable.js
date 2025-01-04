@@ -487,10 +487,10 @@ const styles = StyleSheet.create({
     opacity: 1, // Keep the opacity at 1 to make the button visible
     borderWidth: 4,
     borderColor: "#000", // Change the border color to black
-    elevation: 5, // Add elevation to give a 3D effect
-    shadowColor: "#000", // Add a shadow to give a sense of depth
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
+    elevation: 10, // Add elevation to give a 3D effect
+    shadowColor: "red", // Add a shadow to give a sense of depth
+    shadowOffset: { width: 1, height: 2 },
+    shadowOpacity: 1,
     shadowRadius: 2,
   },
   buttonText: {

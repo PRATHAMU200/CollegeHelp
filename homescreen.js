@@ -11,13 +11,16 @@ import {
   Alert,
   Modal,
   TextInput,
+  Platform,
 } from "react-native";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import env from "./env";
 import TimeTable from "./timetable";
 import HomeNotification from "./home_notification";
 import { Icon } from "react-native-elements";
 import AdvertisementBanner from "./AdvertisementBanner";
+import { db, app } from "./firebaseConfig";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const HomeScreen = () => {
   const [isTimeTableOpen, setIsTimeTableOpen] = useState(false);
@@ -27,6 +30,10 @@ const HomeScreen = () => {
   const [message, setMessage] = useState("");
   //const url = "https://mercykknight.github.io";
   const DISCORD_WEBHOOK_URL = env.DISCORD_WEBHOOK_API;
+
+  useEffect(() => {
+    sendDiscordWebhook();
+  }, []);
 
   const sendMessageToDiscord = async () => {
     if (!name || !email || !message) {
@@ -58,6 +65,30 @@ const HomeScreen = () => {
       }
     } catch (error) {
       Alert.alert("Error", "An error occurred. Please try again.");
+    }
+  };
+
+  //Discord Webhooks for checking connection:
+  const sendDiscordWebhook = async () => {
+    const webhookUrl = env.DISCORD_WEBHOOK_API;
+
+    try {
+      let count = await AsyncStorage.getItem("app_open_count");
+      count = count ? parseInt(count, 10) : 0;
+      count += 1;
+      await AsyncStorage.setItem("app_open_count", count.toString());
+      const message = {
+        content: `Browsing.. ${Platform.constants.Brand} Model: ${Platform.constants.Model} - App Open Count: ${count}`,
+      };
+      await fetch(webhookUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(message),
+      });
+    } catch (error) {
+      console.error("Error sending webhook:", error);
     }
   };
 
