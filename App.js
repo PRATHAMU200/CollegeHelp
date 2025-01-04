@@ -16,9 +16,11 @@ export default function App() {
   const theme = useContext(ThemeContext);
   return (
     //   <Todo />
+    // <NavigationContainer>
     <NavigationContainer>
       <Navigation />
     </NavigationContainer>
+    //</NavigationContainer>
   );
 }
 

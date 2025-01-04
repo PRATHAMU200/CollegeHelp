@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -12,7 +12,9 @@ import {
   Keyboard,
   Modal,
   Switch,
+  ActivityIndicator,
 } from "react-native";
+import { useNetInfo } from "@react-native-community/netinfo";
 import { Icon } from "react-native-elements";
 import {
   getFirestore,
@@ -37,6 +39,7 @@ import { generateUserId } from "./utils";
 const ChatScreen = () => {
   const [message, setMessage] = useState("");
   //const [chatHistory, setChatHistory] = useState([]);
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [chatHistory, setChatHistory] = useState({});
   const [userId, setUserId] = useState("");
   const [username, setUsername] = useState("");
@@ -44,6 +47,11 @@ const ChatScreen = () => {
   const [userAvatar, setUserAvatar] = useState("");
   const [isSettingsModalVisible, setIsSettingsModalVisible] = useState(false);
   const [enableNotifications, setEnableNotifications] = useState(false);
+  const [isConnected, setIsConnected] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const scrollViewRef = React.createRef();
+  const messageInputRef = useRef(null);
   const avatars = {
     avatar1: require("./assets/avatar1.jpg"),
     avatar2: require("./assets/avatar2.jpg"),
@@ -62,6 +70,20 @@ const ChatScreen = () => {
     avatar15: require("./assets/avatar15.jpg"),
     avatar16: require("./assets/avatar16.jpg"),
   };
+  const netInfo = useNetInfo();
+  useEffect(() => {
+    setIsConnected(netInfo.isConnected);
+  }, [netInfo]);
+
+  useEffect(() => {
+    const handleScroll = async () => {
+      if (scrollViewRef.current && isAtBottom) {
+        await scrollViewRef.current.scrollToEnd();
+      }
+    };
+    handleScroll();
+  }, [chatHistory, isAtBottom, scrollViewRef]);
+
   useEffect(() => {
     const loadUserId = async () => {
       try {
@@ -74,7 +96,7 @@ const ChatScreen = () => {
         } else {
           setUserId(storedUserId);
         }
-        const userRef = doc(db, "users", storedUserId);
+        const userRef = doc(db, "users", storedUserId || userId);
         const userDoc = await getDoc(userRef);
         if (userDoc.exists()) {
           const userData = userDoc.data();
@@ -82,19 +104,23 @@ const ChatScreen = () => {
           setUserColor(userData.color);
           setUserAvatar(userData.avatar);
         } else {
-          const username = storedUserId.slice(-11, -2);
-          const randomAvatar =
-            Object.keys(avatars)[
-              Math.floor(Math.random() * Object.keys(avatars).length)
-            ];
-          await setDoc(userRef, {
-            username,
-            color: "#000000",
-            avatar: randomAvatar,
-          });
-          setUsername(username);
-          setUserColor("#000000");
-          setUserAvatar(randomAvatar);
+          if (storedUserId) {
+            const username = `user${Math.floor(Math.random() * 9000) + 1000}`;
+            const randomAvatar =
+              Object.keys(avatars)[
+                Math.floor(Math.random() * Object.keys(avatars).length)
+              ];
+            await setDoc(userRef, {
+              username,
+              color: "#000000",
+              avatar: randomAvatar,
+            });
+            setUsername(username);
+            setUserColor("#000000");
+            setUserAvatar(randomAvatar);
+          } else {
+            console.log("Error loading user ID");
+          }
         }
       } catch (error) {
         console.error("Error loading user ID", error);
@@ -103,20 +129,28 @@ const ChatScreen = () => {
     loadUserId();
   }, []);
   useEffect(() => {
+    setIsLoading(true);
     const chatsRef = collection(db, "chats");
     const q = query(chatsRef, orderBy("timestamp", "asc"), limit(100));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const chats = querySnapshot.docs.map((doc) => doc.data());
       const groupedChats = groupChatHistoryByDate(chats);
       setChatHistory(groupedChats);
+      setIsLoading(false);
     });
     return unsubscribe;
   }, []);
 
   const handleSendMessage = async () => {
-    await storeChatHistory(userId, message);
-    setMessage("");
-    Keyboard.dismiss();
+    setIsSendingMessage(true);
+    try {
+      // your message sending code here
+      await storeChatHistory(userId, message);
+    } finally {
+      setMessage("");
+      Keyboard.dismiss();
+      setIsSendingMessage(false);
+    }
   };
 
   const deleteMessage = async (chat) => {
@@ -178,7 +212,54 @@ const ChatScreen = () => {
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.chatHistory}>
+      {/* No Internet notification */}
+      {!isConnected && (
+        <View
+          style={{
+            position: "absolute",
+            top: 20,
+            left: "40%",
+            backgroundColor: "#FF3737",
+            padding: 10,
+            borderRadius: 10,
+            elevation: 10, // add this for Android
+            zIndex: 1000, // add this for iOS
+            shadowColor: "#000",
+
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.2,
+            shadowRadius: 2,
+          }}
+        >
+          <Text style={{ color: "#fff" }}>No Internet!!</Text>
+        </View>
+      )}
+      {/* Loading progress bar */}
+      {(isLoading || isSendingMessage) && (
+        <View
+          style={{
+            position: "absolute",
+            top: "20%",
+            right: "50%",
+            zIndex: 1000,
+          }}
+        >
+          <ActivityIndicator size="large" color="red" />
+        </View>
+      )}
+
+      <ScrollView
+        style={styles.chatHistory}
+        ref={scrollViewRef}
+        onScroll={(event) => {
+          const { nativeEvent } = event;
+          const { contentOffset, contentSize, layoutMeasurement } = nativeEvent;
+          const isAtBottom =
+            contentOffset.y + layoutMeasurement.height >=
+            contentSize.height - 10;
+          setIsAtBottom(isAtBottom);
+        }}
+      >
         {Object.keys(chatHistory).map((date) => (
           <View key={date}>
             <View
@@ -209,24 +290,7 @@ const ChatScreen = () => {
                         <Text
                           style={styles.chatText}
                           onLongPress={() => {
-                            Alert.alert("Options", "", [
-                              {
-                                text: "Reply",
-                                onPress: () => {
-                                  setMessage(`@${chat.username} `);
-                                },
-                              },
-                              {
-                                text: "Copy",
-                                onPress: () => {
-                                  Clipboard.setString(chat.message);
-                                },
-                              },
-                              {
-                                text: "Cancel",
-                                style: "cancel",
-                              },
-                            ]);
+                            Clipboard.setString(chat.message);
                           }}
                         >
                           {chat.message}
@@ -241,6 +305,16 @@ const ChatScreen = () => {
                           )}
                         </Text>
                       </TouchableOpacity>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.replyButton}
+                      onPress={() => {
+                        setMessage(`@${chat.username} `);
+                        messageInputRef.current.focus();
+                      }}
+                    >
+                      <Icon name="reply" color={"gray"} />
+                      {/* <Text style={styles.replyButtonText}>Reply</Text> */}
                     </TouchableOpacity>
                   </View>
                 ) : (
@@ -288,11 +362,42 @@ const ChatScreen = () => {
           </View>
         ))}
       </ScrollView>
+      {!isAtBottom && (
+        <TouchableOpacity
+          activeOpacity={1}
+          style={{
+            position: "absolute",
+            alignItems: "flex-end",
+            elevation: 10,
+            bottom: 110,
+            right: 25,
+          }}
+          onPress={() => {
+            scrollViewRef.current.scrollToEnd();
+          }}
+        >
+          <Icon
+            name="keyboard-double-arrow-down"
+            size={35}
+            color={"#ccc"}
+            style={{
+              backgroundColor: "gray",
+              borderColor: "white",
+              borderWidth: 1,
+              borderRadius: 50,
+              marginBottom: 10,
+            }}
+          />
+          {/* <Icon name="arrow-drop-down-circle" size={50} color={"blue"} /> */}
+        </TouchableOpacity>
+      )}
 
       <View style={styles.message}>
         <TextInput
-          style={styles.inputMessage}
+          ref={messageInputRef}
+          style={[styles.inputMessage, { color: "white" }]}
           placeholder="Send new message"
+          placeholderTextColor="white"
           value={message}
           onChangeText={(text) => setMessage(text)}
         />
@@ -300,7 +405,7 @@ const ChatScreen = () => {
           style={styles.sendMessage}
           onPress={handleSendMessage}
         >
-          <Icon name="send" />
+          <Icon name="send" color={"white"} />
         </TouchableOpacity>
       </View>
 
@@ -312,6 +417,7 @@ const ChatScreen = () => {
         <Icon name="settings" />
       </TouchableOpacity>
       <Modal
+        animationType="slide"
         visible={isSettingsModalVisible}
         transparent={true}
         onRequestClose={() => setIsSettingsModalVisible(false)}
@@ -345,13 +451,14 @@ const ChatScreen = () => {
               ))}
             </View>
             <View style={styles.notificationToggle}>
-              <Text style={styles.subHeading}>Notifications:</Text>
+              <Text style={styles.subHeading}>Tag Me:</Text>
               <Switch
                 trackColor={{ false: "#ccc", true: "#ccc" }}
                 thumbColor={enableNotifications ? "#007bff" : "#fff"}
                 ios_backgroundColor="#ccc"
                 onValueChange={(value) => setEnableNotifications(value)}
                 value={enableNotifications}
+                //disabled={true}
               />
             </View>
             <View style={styles.buttonContainer}>
@@ -401,7 +508,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 10,
     backgroundColor: "white",
-    maxWidth: "85%",
+    maxWidth: "75%",
     minWidth: 100,
   },
   rightAlignment: {
@@ -427,7 +534,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   inputMessage: {
-    backgroundColor: "white",
+    backgroundColor: "gray",
     padding: 15,
     borderColor: "#cccccc",
     borderRadius: 60,
@@ -437,7 +544,7 @@ const styles = StyleSheet.create({
   sendMessage: {
     width: 50,
     height: 50,
-    backgroundColor: "white",
+    backgroundColor: "green",
     justifyContent: "center",
     borderRadius: 25,
   },
@@ -529,6 +636,25 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 10,
+  },
+  replyButton: {
+    position: "relative",
+    alignSelf: "flex-end",
+    marginTop: "auto",
+    marginBottom: "auto",
+    backgroundColor: "#ccc", //"#4CAF50",
+    padding: 7,
+    borderRadius: 20,
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  replyButtonText: {
+    fontSize: 12,
+    color: "#fff",
+    fontWeight: "bold",
   },
 });
 

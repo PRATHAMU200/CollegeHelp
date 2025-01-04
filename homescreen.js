@@ -260,7 +260,14 @@ const HomeScreen = () => {
               source={require("./assets/contribute.png")} // Replace with an appropriate image
               style={{ width: 100, height: 100, borderRadius: 50 }}
             />
-            <Text style={{ marginLeft: 10, fontSize: 18 }}>Contact Us</Text>
+            <Text
+              style={{
+                marginLeft: 10,
+                fontSize: 18,
+              }}
+            >
+              Chat with Us
+            </Text>
           </View>
         </TouchableOpacity>
 

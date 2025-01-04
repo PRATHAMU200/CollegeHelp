@@ -211,7 +211,9 @@ const TimeTable = () => {
                       ? styles.filled_Practical
                       : tableData[day][hour].classType === "Lecture"
                       ? styles.filled_Lecture
-                      : styles.filled
+                      : tableData[day][hour].classType === "Tutorial"
+                      ? styles.filled
+                      : styles.filled_Other
                     : null,
                 ]}
                 onPress={() => handleTouch(day, hour)}
@@ -222,7 +224,9 @@ const TimeTable = () => {
                       ? "P"
                       : tableData[day][hour].classType === "Lecture"
                       ? "L"
-                      : "T"}
+                      : tableData[day][hour].classType === "Tutorial"
+                      ? "T"
+                      : "O"}
                   </Text>
                 )}
                 {/* <Text> {tableData[day][hour].classType === "" ? "" : "F"}</Text> */}
@@ -249,7 +253,7 @@ const TimeTable = () => {
           <View
             style={{
               backgroundColor: "#fff",
-              padding: 20,
+              padding: 15,
               paddingVertical: 30,
               borderRadius: 10,
               width: "90%",
@@ -265,7 +269,14 @@ const TimeTable = () => {
                 marginBottom: 20,
               }}
             >
-              <Text style={{ fontSize: 24, flex: 1, textAlign: "center" }}>
+              <Text
+                style={{
+                  fontSize: 24,
+                  fontWeight: "bold",
+                  flex: 1,
+                  textAlign: "center",
+                }}
+              >
                 Enter Details :
               </Text>
               <TouchableOpacity onPress={() => setModalVisible(false)}>
@@ -275,21 +286,60 @@ const TimeTable = () => {
             <View
               style={{
                 flexDirection: "row",
-                alignItems: "center",
                 justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 20,
               }}
             >
-              <Text>Class Type:</Text>
-              <Picker
-                selectedValue={classType}
-                style={{ height: 50, width: 170 }}
-                onValueChange={(itemValue) => setClassType(itemValue)}
+              <Text style={{ fontSize: 18 }}>Class Type: </Text>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  //width: 170,
+                }}
               >
-                <Picker.Item label="Select Type" value="" />
-                <Picker.Item label="Practical" value="Practical" />
-                <Picker.Item label="Lecture" value="Lecture" />
-                <Picker.Item label="Tutorial" value="Tutorial" />
-              </Picker>
+                <TouchableOpacity
+                  style={[
+                    styles.classTypeButton,
+                    styles.lectureButton,
+                    classType === "Lecture" && styles.selectedButton,
+                  ]}
+                  onPress={() => setClassType("Lecture")}
+                >
+                  <Text style={styles.buttonText}>L</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.classTypeButton,
+                    styles.practicalButton,
+                    classType === "Practical" && styles.selectedButton,
+                  ]}
+                  onPress={() => setClassType("Practical")}
+                >
+                  <Text style={styles.buttonText}>P</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.classTypeButton,
+                    styles.tutorialButton,
+                    classType === "Tutorial" && styles.selectedButton,
+                  ]}
+                  onPress={() => setClassType("Tutorial")}
+                >
+                  <Text style={styles.buttonText}>T</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.classTypeButton,
+                    styles.otherButton,
+                    classType === "Other" && styles.selectedButton,
+                  ]}
+                  onPress={() => setClassType("Other")}
+                >
+                  <Text style={styles.buttonText}>O</Text>
+                </TouchableOpacity>
+              </View>
             </View>
             <TextInput
               style={{
@@ -342,10 +392,11 @@ const TimeTable = () => {
                 style={{
                   marginTop: 20,
                   elevation: 2,
-                  borderRadius: 20,
+                  borderRadius: 10,
                   borderColor: "blue",
                   padding: 10,
-                  paddingHorizontal: 20,
+                  paddingHorizontal: 45,
+                  backgroundColor: "#4CAF50",
                 }}
                 onPress={handleSubmit}
               >
@@ -357,10 +408,11 @@ const TimeTable = () => {
                     style={{
                       marginTop: 20,
                       elevation: 2,
-                      borderRadius: 20,
+                      borderRadius: 10,
                       borderColor: "red",
+                      backgroundColor: "#FF7F7F",
                       padding: 10,
-                      paddingHorizontal: 20,
+                      paddingHorizontal: 45,
                     }}
                     onPress={handleDelete}
                   >
@@ -422,6 +474,41 @@ const styles = StyleSheet.create({
     color: "#3a414e", //"#fff",
     textAlign: "center",
     justifyContent: "center",
+  },
+  classTypeButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    marginHorizontal: 5,
+  },
+  selectedButton: {
+    opacity: 1, // Keep the opacity at 1 to make the button visible
+    borderWidth: 4,
+    borderColor: "#000", // Change the border color to black
+    elevation: 5, // Add elevation to give a 3D effect
+    shadowColor: "#000", // Add a shadow to give a sense of depth
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  buttonText: {
+    fontSize: 20,
+    fontWeight: "bold",
+  },
+
+  lectureButton: {
+    backgroundColor: "#decf1a",
+  },
+  practicalButton: {
+    backgroundColor: "#2fd614",
+  },
+  tutorialButton: {
+    backgroundColor: "#007aff",
+  },
+  otherButton: {
+    backgroundColor: "gray",
   },
 });
 

@@ -37,6 +37,7 @@ const Navigation = () => {
 
   return (
     <Tab.Navigator
+      animationEnabled={true}
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
@@ -56,6 +57,8 @@ const Navigation = () => {
         },
         tabBarActiveTintColor: "tomato",
         tabBarInactiveTintColor: "gray",
+        tabBarHideOnKeyboard: "true",
+        animation: "shift",
         tabBarStyle: {
           backgroundColor: "#fff",
           borderTopLeftRadius: 15,
