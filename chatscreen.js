@@ -96,15 +96,16 @@ const ChatScreen = () => {
     const loadUserId = async () => {
       try {
         const storedUserId = await AsyncStorage.getItem("userId");
+        let finalUserId = storedUserId;
         if (!storedUserId) {
           const newUserId = await generateUserId();
-          setUserId(newUserId);
           await AsyncStorage.setItem("userId", newUserId);
-          console.log(newUserId);
-        } else {
-          setUserId(storedUserId);
+          finalUserId = newUserId;
         }
-        const userRef = doc(db, "users", storedUserId || userId);
+        setUserId(finalUserId);
+
+        const userRef = doc(db, "users", finalUserId);
+
         const userDoc = await getDoc(userRef);
         if (userDoc.exists()) {
           const userData = userDoc.data();
@@ -112,23 +113,19 @@ const ChatScreen = () => {
           setUserColor(userData.color);
           setUserAvatar(userData.avatar);
         } else {
-          if (storedUserId) {
-            const username = `user${Math.floor(Math.random() * 9000) + 1000}`;
-            const randomAvatar =
-              Object.keys(avatars)[
-                Math.floor(Math.random() * Object.keys(avatars).length)
-              ];
-            await setDoc(userRef, {
-              username,
-              color: "#000000",
-              avatar: randomAvatar,
-            });
-            setUsername(username);
-            setUserColor("#000000");
-            setUserAvatar(randomAvatar);
-          } else {
-            console.log("Error loading user ID");
-          }
+          const username = `user${Math.floor(Math.random() * 9000) + 1000}`;
+          const randomAvatar =
+            Object.keys(avatars)[
+              Math.floor(Math.random() * Object.keys(avatars).length)
+            ];
+          await setDoc(userRef, {
+            username,
+            color: "#000000",
+            avatar: randomAvatar,
+          });
+          setUsername(username);
+          setUserColor("#000000");
+          setUserAvatar(randomAvatar);
         }
       } catch (error) {
         console.error("Error loading user ID", error);
