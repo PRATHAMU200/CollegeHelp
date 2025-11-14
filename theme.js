@@ -1,6 +1,6 @@
 import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
 import { useState, createContext } from "react";
-import { Icon } from "react-native-elements";
+import { MaterialIcons } from "@expo/vector-icons";
 
 const ThemeContext = createContext();
 
@@ -14,7 +14,10 @@ const ThemeToggle = () => {
         setTheme(theme === "light" ? "dark" : "light");
       }}
     >
-      <Icon name={theme === "light" ? "light-mode" : "dark-mode"} size={30} />
+      <MaterialIcons
+        name={theme === "light" ? "light-mode" : "dark-mode"}
+        size={30}
+      />
     </TouchableOpacity>
   );
 };

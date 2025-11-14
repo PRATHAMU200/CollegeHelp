@@ -9,7 +9,8 @@ import {
   TextInput,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
-import { Icon } from "react-native-elements";
+//import { Icon } from "react-native-elements";
+import { MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const TimeTable = () => {
@@ -280,7 +281,7 @@ const TimeTable = () => {
                 Enter Details :
               </Text>
               <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Icon name="close" />
+                <MaterialIcons name="close" size={25} />
               </TouchableOpacity>
             </View>
             <View

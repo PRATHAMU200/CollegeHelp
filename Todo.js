@@ -11,7 +11,8 @@ import {
   NativeModules,
 } from "react-native";
 import Task from "./Task.js";
-import { Icon } from "react-native-elements";
+//import { Icon } from "react-native-elements";
+import { MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { useState, useEffect } from "react";
@@ -170,7 +171,7 @@ export default function Todo({ onTodoLengthChange }) {
           style={styles.addButton}
           onPress={() => AddTask(task)}
         >
-          <Icon name="add" />
+          <MaterialIcons name="add" size={30} />
         </TouchableOpacity>
       </View>
     </View>
@@ -219,6 +220,7 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     justifyContent: "center",
     borderRadius: 25,
+    padding: 10,
   },
   emptyList: {
     flex: 1,

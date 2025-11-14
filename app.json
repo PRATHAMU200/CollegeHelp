@@ -2,12 +2,12 @@
   "expo": {
     "name": "collegeHelp",
     "slug": "collegeHelp",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "orientation": "portrait",
-    "icon": "./assets/collegehelp_icon.jpg",
+    "icon": "./assets/collegehelp_icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash_fg.jpg",
+      "image": "./assets/splash_fg.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -15,12 +15,13 @@
       "supportsTablet": true
     },
     "android": {
+      "versionCode": 2,
       "permissions": [
-    "READ_EXTERNAL_STORAGE",
-    "WRITE_EXTERNAL_STORAGE"
-    ],
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ],
       "adaptiveIcon": {
-        "foregroundImage": "./assets/collegehelp_icon.jpg",
+        "foregroundImage": "./assets/collegehelp_icon.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.prathamtechlab.collegeHelp"

@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import HomeScreen from "./homescreen";
 import Todo from "./Todo";
-import { Icon } from "react-native-elements";
+//import { Icon } from "react-native-elements";
+import { MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
 import DriveScreen from "./drivescreen";
@@ -53,7 +54,7 @@ const Navigation = () => {
           }
 
           // You can return any component that you like here!
-          return <Icon name={iconName} size={size} color={color} />;
+          return <MaterialIcons name={iconName} size={size} color={color} />;
         },
         tabBarActiveTintColor: "tomato",
         tabBarInactiveTintColor: "gray",

@@ -13,12 +13,11 @@
       },
       "distribution": "internal"
     },
-    "preview2": {
+    "production": {
       "android": {
-        "buildType": "apk"
+        "buildType": "app-bundle"
       }
-    },
-    "production": {}
+    }
   },
   "submit": {
     "production": {}

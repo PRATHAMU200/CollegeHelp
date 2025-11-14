@@ -9,7 +9,8 @@ import {
   Linking,
 } from "react-native";
 import fetchAdvertisement from "./api";
-import { Icon } from "react-native-elements";
+//import { Icon } from "react-native-elements";
+import { Ionicons } from '@expo/vector-icons';
 
 const AdvertisementBanner = () => {
   const [advertisement, setAdvertisement] = useState(null);
@@ -84,7 +85,7 @@ const AdvertisementBanner = () => {
             }}
             onPress={handleClose}
           >
-            <Icon name="close" type="material" size={35} />
+            <Ionicons name="close" type="material" size={35} />
           </TouchableOpacity>
 
           {/* Content */}

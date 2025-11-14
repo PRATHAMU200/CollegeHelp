@@ -17,13 +17,16 @@ import { useState, useEffect } from "react";
 import env from "./env";
 import TimeTable from "./timetable";
 import HomeNotification from "./home_notification";
-import { Icon } from "react-native-elements";
+//import { Icon } from "react-native-elements";
+import { Ionicons } from "@expo/vector-icons";
+
 import AdvertisementBanner from "./AdvertisementBanner";
+
 import { db, app } from "./firebaseConfig";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const HomeScreen = () => {
-  const [isTimeTableOpen, setIsTimeTableOpen] = useState(false);
+  const [isTimeTableOpen, setIsTimeTableOpen] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -171,10 +174,10 @@ const HomeScreen = () => {
           alignItems: "center",
         }}
       >
-        <Icon
-          name={isTimeTableOpen ? "arrow-drop-up" : "arrow-drop-down"}
+        <Ionicons
+          name={isTimeTableOpen ? "arrow-up" : "arrow-down-circle"}
           type="material"
-          size={40}
+          size={25}
         />
         <Text
           style={{

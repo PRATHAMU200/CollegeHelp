@@ -5,7 +5,9 @@ const AdvertisementHeader = () => {
   const [advertisement, setAdvertisement] = useState(null);
 
   useEffect(() => {
-    fetch("https://your-github-pages-url.com/advertisement.json")
+    fetch(
+      `https://prathamu200.github.io/notification-api/advertisementHeader.json?cache-bust=${new Date().getTime()}`
+    )
       .then((response) => response.json())
       .then((data) => setAdvertisement(data.advertisement));
   }, []);

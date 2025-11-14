@@ -17,9 +17,11 @@ import {
 } from "react-native";
 import * as Sharing from "expo-sharing"; // Import the library
 import FileViewer from "react-native-file-viewer";
-import { Icon } from "react-native-elements";
+//import { Icon } from "react-native-elements";
+import { MaterialIcons } from "@expo/vector-icons";
+
 import * as IntentLauncher from "expo-intent-launcher";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import * as DocumentPicker from "expo-document-picker";
 import ImageViewer from "react-native-image-zoom-viewer";
 import * as ImagePicker from "expo-image-picker";
@@ -235,7 +237,7 @@ const DriveScreen = () => {
       // }
 
       // Define the destination path in the app directory
-      const destinationUri = `${FileSystem.documentDirectory}/CollegeHelpDrive/${name}`;
+      const destinationUri = `${currentPath}/${name}`;
 
       // Copy the selected file to the app directory
       await FileSystem.copyAsync({ from: uri, to: destinationUri });
@@ -477,28 +479,28 @@ const DriveScreen = () => {
             // Action Bar in Selection Mode
             <View style={styles.actionBar}>
               <TouchableOpacity onPress={cancelSelection}>
-                <Icon name="close" size={24} color="#000" />
+                <MaterialIcons name="close" size={24} color="#000" />
               </TouchableOpacity>
               <TouchableOpacity onPress={handleShareSelected}>
-                <Icon name="share" size={24} color="#000" />
+                <MaterialIcons name="share" size={24} color="#000" />
               </TouchableOpacity>
 
               {selectedFiles.length === 1 && (
                 <TouchableOpacity
                   onPress={() => handleFileInfo(selectedFiles[0])}
                 >
-                  <Icon name="edit" size={24} color="#000" />
+                  <MaterialIcons name="edit" size={24} color="#000" />
                 </TouchableOpacity>
               )}
               <TouchableOpacity onPress={handleDeleteSelected}>
-                <Icon name="delete" size={24} color="#000" />
+                <MaterialIcons name="delete" size={24} color="#000" />
               </TouchableOpacity>
             </View>
           ) : (
             // Navigation Bar in Normal Mode
             <View style={styles.navigationBar}>
               <TouchableOpacity onPress={handleGoBack}>
-                <Icon
+                <MaterialIcons
                   name="arrow-back"
                   type="material"
                   size={24}
@@ -530,14 +532,18 @@ const DriveScreen = () => {
                   <View style={styles.fileContent}>
                     {item.isDirectory ? (
                       <View style={styles.folderPreview}>
-                        <Icon name="folder" size={40} color="#FFD700" />
+                        <MaterialIcons
+                          name="folder"
+                          size={40}
+                          color="#FFD700"
+                        />
                         <Text style={styles.fileName}>
                           {item.name.length > 15
                             ? `${item.name.slice(0, 50)}...`
                             : item.name}
                         </Text>
                         {selectedFiles.some((f) => f.uri === item.uri) && (
-                          <Icon
+                          <MaterialIcons
                             name="check-circle"
                             size={20}
                             color="blue"
@@ -552,7 +558,7 @@ const DriveScreen = () => {
                       <>
                         {item.name.endsWith(".pdf") ? (
                           <View style={styles.filePreview}>
-                            <Icon
+                            <MaterialIcons
                               name="picture-as-pdf"
                               type="material"
                               size={40}
@@ -564,7 +570,7 @@ const DriveScreen = () => {
                                 : item.name}
                             </Text>
                             {selectedFiles.some((f) => f.uri === item.uri) && (
-                              <Icon
+                              <MaterialIcons
                                 name="check-circle"
                                 size={20}
                                 color="blue"
@@ -578,7 +584,7 @@ const DriveScreen = () => {
                         ) : item.name.endsWith(".xlsx") ||
                           item.name.endsWith(".xls") ? (
                           <View style={styles.filePreview}>
-                            <Icon
+                            <MaterialIcons
                               name="table-view"
                               type="material"
                               size={40}
@@ -590,7 +596,7 @@ const DriveScreen = () => {
                                 : item.name}
                             </Text>
                             {selectedFiles.some((f) => f.uri === item.uri) && (
-                              <Icon
+                              <MaterialIcons
                                 name="check-circle"
                                 size={20}
                                 color="blue"
@@ -605,7 +611,7 @@ const DriveScreen = () => {
                           item.name.endsWith(".docx") ||
                           item.name.endsWith(".doc") ? (
                           <View style={styles.filePreview}>
-                            <Icon
+                            <MaterialIcons
                               name="description"
                               type="material"
                               size={40}
@@ -617,7 +623,7 @@ const DriveScreen = () => {
                                 : item.name}
                             </Text>
                             {selectedFiles.some((f) => f.uri === item.uri) && (
-                              <Icon
+                              <MaterialIcons
                                 name="check-circle"
                                 size={20}
                                 color="blue"
@@ -635,7 +641,7 @@ const DriveScreen = () => {
                           item.name.endsWith(".wav") ||
                           item.name.endsWith(".mkv") ? (
                           <View style={styles.filePreview}>
-                            <Icon
+                            <MaterialIcons
                               name="movie"
                               type="material"
                               size={40}
@@ -647,7 +653,7 @@ const DriveScreen = () => {
                                 : item.name}
                             </Text>
                             {selectedFiles.some((f) => f.uri === item.uri) && (
-                              <Icon
+                              <MaterialIcons
                                 name="check-circle"
                                 size={20}
                                 color="blue"
@@ -672,7 +678,7 @@ const DriveScreen = () => {
                               ]}
                             />
                             {selectedFiles.some((f) => f.uri === item.uri) && (
-                              <Icon
+                              <MaterialIcons
                                 name="check-circle"
                                 size={20}
                                 color="blue"
@@ -685,7 +691,7 @@ const DriveScreen = () => {
                           </View>
                         ) : (
                           <View style={styles.filePreview}>
-                            <Icon
+                            <MaterialIcons
                               name="text-snippet"
                               type="material"
                               size={40}
@@ -697,7 +703,7 @@ const DriveScreen = () => {
                                 : item.name}
                             </Text>
                             {selectedFiles.some((f) => f.uri === item.uri) && (
-                              <Icon
+                              <MaterialIcons
                                 name="check-circle"
                                 size={20}
                                 color="blue"
@@ -745,7 +751,7 @@ const DriveScreen = () => {
               >
                 <TouchableOpacity onPress={handleCreateFolder}>
                   <View style={styles.modalItem}>
-                    <Icon
+                    <MaterialIcons
                       name="folder"
                       type="material"
                       size={24}
@@ -756,13 +762,13 @@ const DriveScreen = () => {
                 </TouchableOpacity>
                 <TouchableOpacity onPress={handleImageUpload}>
                   <View style={styles.modalItem}>
-                    <Icon name="upload" size={24} color="#666" />
+                    <MaterialIcons name="upload" size={24} color="#666" />
                     <Text style={styles.modalText}>Upload Image</Text>
                   </View>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={handleCameraImage}>
                   <View style={styles.modalItem}>
-                    <Icon
+                    <MaterialIcons
                       name="camera"
                       type="font-awesome"
                       size={24}
@@ -780,13 +786,13 @@ const DriveScreen = () => {
               >
                 <TouchableOpacity onPress={handleFileUpload}>
                   <View style={styles.modalItem}>
-                    <Icon name="cloud" size={24} color="#666" />
+                    <MaterialIcons name="cloud" size={24} color="#666" />
                     <Text style={styles.modalText}>Upload File</Text>
                   </View>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={handleFileUpload}>
                   <View style={styles.modalItem}>
-                    <Icon name="description" size={24} color="#666" />
+                    <MaterialIcons name="description" size={24} color="#666" />
                     <Text style={styles.modalText}>Upload File</Text>
                   </View>
                 </TouchableOpacity>

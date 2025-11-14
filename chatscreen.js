@@ -15,7 +15,9 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useNetInfo } from "@react-native-community/netinfo";
-import { Icon } from "react-native-elements";
+//import { Icon } from "react-native-elements";
+import { MaterialIcons } from "@expo/vector-icons";
+
 import {
   getFirestore,
   collection,
@@ -318,7 +320,7 @@ const ChatScreen = () => {
                         messageInputRef.current.focus();
                       }}
                     >
-                      <Icon name="reply" color={"gray"} />
+                      <MaterialIcons name="reply" size={20} color={"gray"} />
                       {/* <Text style={styles.replyButtonText}>Reply</Text> */}
                     </TouchableOpacity>
                   </View>
@@ -381,7 +383,7 @@ const ChatScreen = () => {
             scrollViewRef.current.scrollToEnd();
           }}
         >
-          <Icon
+          <MaterialIcons
             name="keyboard-double-arrow-down"
             size={35}
             color={"#ccc"}
@@ -410,7 +412,7 @@ const ChatScreen = () => {
           style={styles.sendMessage}
           onPress={handleSendMessage}
         >
-          <Icon name="send" color={"white"} />
+          <MaterialIcons name="send" size={30} color={"white"} />
         </TouchableOpacity>
       </View>
 
@@ -419,7 +421,7 @@ const ChatScreen = () => {
         style={styles.settingsButton}
         onPress={() => setIsSettingsModalVisible(true)}
       >
-        <Icon name="settings" />
+        <MaterialIcons name="settings" size={20} />
       </TouchableOpacity>
       <Modal
         animationType="slide"
@@ -552,6 +554,7 @@ const styles = StyleSheet.create({
     backgroundColor: "green",
     justifyContent: "center",
     borderRadius: 25,
+    padding: 10,
   },
   authorName: {
     fontSize: 12,

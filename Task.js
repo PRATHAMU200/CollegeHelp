@@ -1,5 +1,6 @@
 import React from "react";
 import { Icon } from "react-native-elements";
+import { MaterialIcons } from "@expo/vector-icons";
 import {
   View,
   Text,
@@ -19,9 +20,10 @@ const Task = (props) => {
       }}
     >
       <View style={styles.square}>
-        <Icon
+        <MaterialIcons
           name="check"
           type="FontAwesome"
+          size={25}
           style={!props.item.completed && styles.checkBoxComplete}
         />
       </View>
@@ -38,7 +40,7 @@ const Task = (props) => {
         style={styles.circle}
         onPress={() => props.DeleteTask(props.item.id)}
       >
-        <Icon name="delete" color="#e60000" />
+        <MaterialIcons name="delete" size={30} color="#e60000" />
       </TouchableOpacity>
     </TouchableOpacity>
   );
